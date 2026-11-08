@@ -1,0 +1,23 @@
+# private lead data (contains profile links) - never commit or publish
+data/private/
+
+# Coresignal-derived data. Coresignal's licence limits republishing, so keep it out of git
+# history. These files are regenerated locally by the pipeline (see README):
+data/raw/coresignal.csv
+# merge.py output (includes Coresignal rows)
+data/bitsians.csv
+# build_companies.py output (includes Coresignal-only companies)
+data/companies.csv
+# make_enrich_batches.py output (lists founder names)
+data/enrich/todo_*.csv
+
+# local env (may hold secrets later); copy web/.env.example to web/.env
+.env
+
+# local Claude app state; keep only the dev-server launch config
+.claude/*
+!.claude/launch.json
+
+# local scratch / caches
+__pycache__/
+.DS_Store

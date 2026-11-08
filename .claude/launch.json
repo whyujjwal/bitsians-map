@@ -1,0 +1,33 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bitsians-map-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "web",
+        "preview",
+        "--port",
+        "4321",
+        "--host",
+        "127.0.0.1"
+      ],
+      "port": 4321
+    },
+    {
+      "name": "bitsians-map-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "web",
+        "dev",
+        "--port",
+        "4322",
+        "--host",
+        "127.0.0.1"
+      ],
+      "port": 4322
+    }
+  ]
+}

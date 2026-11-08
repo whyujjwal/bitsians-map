@@ -1,0 +1,88 @@
+---
+import Base from '../../layouts/Base.astro';
+import raw from '../../data/companies.json';
+import TopBar from '../../components/TopBar.astro';
+import { initials, isInactive, tileKind } from '../../lib/data';
+
+export function getStaticPaths() {
+  return (raw as any[]).map((c) => ({ params: { id: c.id }, props: { c } }));
+}
+const { c } = Astro.props as { c: any };
+const status = isInactive(c.status) ? c.status[0].toUpperCase() + c.status.slice(1) : '';
+const kind = tileKind(c);
+const place = [c.city, c.country].filter(Boolean).join(', ');
+const hasPos = c.lat != null && c.lng != null;
+const host = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
+const founderNames = c.founders.map((f: any) => f.name).join(', ');
+const title = `${c.name} | BITSians Startup Map`;
+const description = (
+  `${c.name}${c.oneLine ? ': ' + c.oneLine.replace(/\.$/, '') : ''}. ` +
+  [c.sector, c.stage, place].filter(Boolean).join(', ') + '.' +
+  (founderNames ? ` Founded by BITS Pilani alumni ${founderNames}.` : '') +
+  (c.careers ? ' Hiring.' : '')
+).slice(0, 300);
+const sameAs = [c.website].filter(Boolean);
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: c.name,
+  ...(c.oneLine && { description: c.oneLine }),
+  ...(c.website && { url: c.website }),
+  ...(sameAs.length && { sameAs }),
+  ...(c.founded && { foundingDate: c.founded }),
+  ...(place && { location: { '@type': 'Place', name: place } }),
+  ...(c.founders.length && { founder: c.founders.map((f: any) => ({ '@type': 'Person', name: f.name, ...(f.role && { jobTitle: f.role }) })) }),
+};
+---
+<Base {title} {description} {jsonLd}>
+  <div class="cpage">
+    <TopBar />
+    <main class="cwrap">
+      <article class="dbody">
+        <div class="dtitle">
+          {c.logo
+            ? <span class={`tile logo t-xl ${kind}${c.logoDark ? ' dark' : ''}`} aria-hidden="true"><img src={c.logo} alt="" width="50" height="50" loading="lazy" decoding="async" /></span>
+            : <span class={`tile t-xl ${kind}`} aria-hidden="true">{initials(c.name)}</span>}
+          <h1>{c.name}</h1>
+        </div>
+        {c.oneLine && <p class="done">{c.oneLine}</p>}
+        <p class="facts">
+          {c.stage && <span>{c.stage}</span>}
+          {c.sector && <span>{c.sector}</span>}
+          {place && <span>{place}</span>}
+          {c.founded && <span>Founded {c.founded}</span>}
+          {status && <span class="st">{status}</span>}
+        </p>
+        {c.careers && <a class="cta" href={c.careers} target="_blank" rel="noopener noreferrer">View open roles</a>}
+        <p class="links">
+          {c.website && <a href={c.website} target="_blank" rel="noopener noreferrer">Website <span class="sr">({host(c.website)})</span></a>}
+          {hasPos && <a href={`/?c=${encodeURIComponent(c.id)}`}>See it on the map</a>}
+        </p>
+
+        {c.founders.length > 0 && (
+          <section aria-labelledby="fh">
+            <h2 id="fh">Founders</h2>
+            <ul class="founders">
+              {c.founders.map((f: any) => (
+                <li>
+                  <span class="fname">{f.name}</span>
+                  <span class="frole">{f.role}{(f.campus || f.gradYear) && <span class="fcy">{[f.campus, f.gradYear].filter(Boolean).join(', ')}</span>}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {c.sources?.length > 0 && (
+          <section aria-labelledby="sh">
+            <h2 id="sh">Sources</h2>
+            <ul class="sources">
+              {c.sources.map((u: string) => <li><a href={u} target="_blank" rel="noopener noreferrer">{u.replace(/^https?:\/\/(www\.)?/, '')}</a></li>)}
+            </ul>
+          </section>
+        )}
+      </article>
+    </main>
+    <footer class="foot">Independent community project, not affiliated with BITS Pilani.</footer>
+  </div>
+</Base>

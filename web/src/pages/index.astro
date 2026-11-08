@@ -1,0 +1,12 @@
+---
+import App from '../components/App.svelte';
+import Base from '../layouts/Base.astro';
+// App imports its own slim dataset (src/data/index-data.json, written by
+// scripts/export_web_data.py), so no data is serialized into island props here.
+---
+<Base
+  title="BITSians Startup Map"
+  description="A map and directory of companies founded by BITS Pilani alumni across Pilani, Goa, Hyderabad and Dubai. Find founders and open roles."
+>
+  <App client:load />
+</Base>

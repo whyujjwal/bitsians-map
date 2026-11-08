@@ -1,0 +1,52 @@
+company_name,company_website,careers_url,status,city_hq,country,office_address,india_office_address,founded_year,source_url,notes
+Akamai Technologies,https://www.akamai.com,https://www.akamai.com/careers,active,Cambridge,USA,"145 Broadway, Cambridge, MA",,1998,https://en.wikipedia.org/wiki/Akamai_Technologies,"Careers URL returned 403 to automated fetch (bot block) but is the standard path; address from Wikipedia, no ZIP"
+Appalto,,,,,,,,,,could not identify
+Arrka,,,acquired by Persistent Systems,,,,,,https://news.ventureintelligence.com/ma/persistent-systems-acquires-data-privacy-player-arrka-for-rs.14.4-cr,Acquired Sept 2024; HQ city not confirmed; founding year disputed (2010 vs 2012); website not verified
+Belong,https://belong.co,,unknown,Bengaluru,India,,,2014,https://www.business-standard.com/amp/article/companies/a-tale-of-professional-match-making-117031200663_1.html,Site is live but no careers page found (/careers 404); latest funding news is 2017 so status unclear
+BillionCarbon,,,,,,,,,https://www.bits-pilani.ac.in/meet-ankita-vijayvergiya-linkedin-top-voice-and-climate-entrepreneur/,Founder confirmed via BITS page; no official website found
+Bolt.Earth,https://bolt.earth,https://bolt.keka.com/careers,active,Bengaluru,India,,,2017,https://builtin.com/company/boltearth-1,Formerly RevOS; HSR Layout address seen only on CB Insights so not recorded
+Burncal,,,unknown,Ahmedabad,India,,,2020,https://www.100x.vc/news-coverage/burn-cal-raises-330-000-in-pre-seed-round-funding-led-by-titan-capital-sense-ai-ventures-100x.vc-team-2021-startups,Founders matched; no official site found; no news after 2022
+Clearpack Group,https://clearpack.com,,active,Singapore,Singapore,"67 Ubi Road 1, Oxley Bizhub, Singapore 408730",,1991,https://clearpack.com/,Address from company site (unit number differs between sources so omitted); founded year from directory; India entity Clearpack Automation Pvt Ltd exists but no published address; founder match not confirmed
+CodeTantra,https://www.codetantra.com,,active,Hyderabad,India,,,,https://www.thecompanycheck.com/company/b/codetantra/aa9437edd3244b26b,"Founded 2011 vs incorporated 2014 in sources, left blank; no careers page found"
+Cubito.in,,,unknown,Bengaluru,India,,,,https://yourstory.com/2015/07/cubito-pivot,Pivoted from cab sharing to B2B logistics in 2015; no current site or status found; launched 2013
+Digital Assembly,,,unknown,Brooklyn,USA,,,,https://www.forensicfocus.com/news/digital-assembly-nyu-poly-help-speed-forensic-digital-photo-recovery-for-gov-le/,"Brooklyn-based per press, sources date from 2009-2010; current status not found"
+Eltropy,https://eltropy.com,https://job-boards.greenhouse.io/eltropyinc,active,Santa Clara,USA,,,,https://www.einpresswire.com/article/709972045/eltropy-moves-into-new-headquarters-to-support-rapid-growth,"HQ moved to Santa Clara May 2024 (older boards say Milpitas); has Bangalore engineering office, no address found; founder not confirmed in sources"
+Fabric7 Systems,,,closed,,,,,2002,https://networkcomputing.com/network-infrastructure/fabric7-feasts-on-17-5m,Ceased operations around April 2007 per profiles; no website
+Flam,https://flamapp.ai,https://flamapp.ai/careers,active,Bengaluru,India,,,2021,https://yourstory.com/2024/05/ai-startup-flam-usd-45-million-pre-series-a-funding,Also San Francisco presence; no street address published on site
+Garphi Biosciences,,,,,,,,,,could not identify
+Gradium,,,,,,,,,https://www.bits-pilani.ac.in/shubham-sharma-an-odyssey-from-amazon-to-tvf-pitchers-to-ai-magic-at-gradium,"Ambiguous: a Paris voice-AI startup named Gradium (gradium.ai, Kyutai spin-out) exists but its listed founders do not include Shubham Sharma; BITS page says he co-leads Gradium. Not confirmed same company, left blank"
+Habbit,,,unknown,Bengaluru,India,,,2020,https://yourstory.com/2021/09/funding-experiential-learning-startup-habbit-pre-seed-round/amp,Pre-seed 2021; no official site found; one unverified profile suggests founder moved on
+Hippocratic AI,https://www.hippocraticai.com,,active,Palo Alto,USA,,,2023,https://builtin.com/company/hippocratic-ai,Site and careers pages returned 403 to automated fetch so careers left blank; founder Debajyoti Datta not verified in sources (CEO Munjal Shah)
+iLink Systems,https://www.ilink-digital.com,https://www.ilink-digital.com/careers,active,Bellevue,USA,,,,https://www.builtinseattle.com/company/ilink-digital,Trades as iLink Digital; HQ listed as Bellevue/Seattle in different sources; founder not confirmed
+Insubuy,,,active,Plano,USA,,,2000,https://coverager.com/?p=220212,Site careers page 403; address only from directories so omitted; founders confirmed via broker-network page
+Jana Small Finance Bank,,,active,Bengaluru,India,,,,https://www.jana.bank.in/notify,"Only registered office address available so omitted; founding date ambiguous (2006 company, 2018 bank); careers page 404, email careers@jana.bank.in only"
+Khatore Pharmaceuticals,,,unknown,Barbil,India,,,1987,https://www.tofler.in/khatore-pharmaceuticals-pvt-ltd/company/U24231OR1987PTC001836,"Incorporated 1987 per Tofler; registered address only so omitted; Keonjhar, Odisha"
+Kore.ai,https://kore.ai,https://www.kore.ai/careers,active,,,,,,https://kore.ai/contact-us/,"HQ not stated on the page fetched, left blank"
+LearningPractice,,,,,,,,,,could not identify
+Locus,https://locus.sh,https://locus.sh/careers/,active,,,,,,https://locus.sh/contact-us/,HQ not confirmed from site; has Darwinbox talent network
+MarkItUp,,,,,,,,,,could not identify
+Mebelkart,,,closed,Bangalore,India,,,2012,https://en.wikipedia.org/wiki/Mebelkart,Wikipedia uses past tense; closure per input; no closure date found; founded Nov 2012
+Mojo Networks,,,acquired by Arista Networks,Mountain View,USA,,,2002,https://www.arista.com/en/company/news/press-release/5717-pr-20180802,Acquired Aug 2018; founder Kiran Deshpande not named in sources
+Nable IT Consultancy Services,,,,,,,,,,could not identify
+Neuberg Diagnostics,https://www.neubergdiagnostics.com,https://www.neubergdiagnostics.com/careers,active,Chennai,India,,,2017,https://www.thecompanycheck.com/company/b/neuberg-diagnostics/w2816897kfloxs5qd,Only registry address found so omitted
+Nurture Fields,,,,,,,,,,could not identify
+OpenCFO,https://opencfo.ai,,active,Seattle,USA,,,2025,https://startuptalky.com/opencfo-raises-2m-to-build-the-ai-native-financial-operating-system-for-global-mid-market-cfos,Seattle per press; India team likely but no address
+Pensando Systems,,,acquired by AMD,,,,,2017,https://ir.amd.com/news-events/press-releases/detail/1071/amd-expands-data-center-solutions-capabilities-with,Acquired May 2022 for about $1.9B
+Pixis,https://pixis.ai,https://pixis.ai/careers/,active,,,,,,https://pixis.ai/careers/,"HQ conflicting across sources (Chicago, Burlingame, Bengaluru) so blank"
+Postman,https://postman.com,https://www.postman.com/company/careers/open-positions/,active,San Francisco,USA,"One Market Plaza, 1 Market Street, Steuart Tower, Suite 0800, San Francisco, CA 94105","Building no 310, 6th Main Road Indiranagar, Bangalore, Karnataka 560038",,https://postman.com/company/contact-us,Founded year not on page; Bangalore is where it was founded
+Prometheus School,https://prometheusschool.com,,active,Noida,India,"I-7, Jaypee Wish Town, Sector 131, Noida, Uttar Pradesh 201304",,2019,https://prometheusschool.com/wp-content/uploads/2024/12/school-brochure.pdf,Address from school brochure; site returned 403 to automated fetch
+R13 Labs,,,,,,,,,,could not identify
+Reston Consulting Group,,,unknown,Herndon,USA,,,1987,https://uk.marketscreener.com/insider/BRIJ-BHUSHAN-A1M0MM,"Matched by director name via aggregator only; unverified, may not be same firm"
+Samaro.ai,https://samaro.ai,,active,,,,,,https://samaro.ai/about-us,Founder Anupam Maurya confirmed on About page; not to be confused with Samaaro; HQ not stated
+Scrollify,,,,,,,,,,could not identify
+Sierra Atlantic,,,acquired by Hitachi Consulting,,,,,,https://www.hitachi.com/New/cnews/110104.html,"Announced Jan 4, 2011"
+Spice Money,,,active,Noida,India,,,,https://en.wikipedia.org/wiki/Spice_Money,Official site and careers not verified; address sources conflict
+Stratzy,,,unknown,Mumbai,India,,,,https://yourstory.com/2021/11/funding-alert-investment-advisory-platform-everyday-investors-stratzy,Founded 2020 or 2021 per sources; one unverified profile claims acquisition by Raise in Nov 2025; site not verified
+Swiggy,https://swiggy.com,https://careers.swiggy.com,active,Bengaluru,India,,,2013,https://en.wikipedia.org/wiki/Swiggy,No street address published on pages checked
+TeliportME,https://teliportme.com,,active,,,,,,https://polypane.app/blog/how-teliportme-is-moving-to-the-web-with-polypane/,Site loads and sells virtual tour software; Asthana is cofounder per interview; 'BITS 360' origin not confirmed
+Tonbo Imaging,https://tonboimaging.com,,active,Bengaluru,India,,,,https://pitchbook.com/profiles/company/55437-22,Founding year conflicts (2003/2012); addresses vary so omitted; careers page returned 406
+upcover,https://upcover.com,,active,Sydney,Australia,,,2019,https://upcover.com/about-us,Australian business insurance broker; Anish Sinha co-founder; careers page 404
+Valonia,,,,,,,,,,could not identify
+Visit Health,https://getvisitapp.com,https://getvisitapp.keka.com/careers,active,,India,,,2016,https://getvisitapp.keka.com/careers,HQ city/address not confirmed (New Delhi/Gurugram unverified)
+WickedGud,https://wickedgud.com,,active,Mumbai,India,,,2021,https://cxodigitalpulse.com/?p=25053,Founded 2021 or Apr 2022 per sources
+Zeta,https://zeta.tech,https://www.zeta.tech/in/careers/work-with-us,active,San Ramon,USA,"2603 Camino Ramon, Suite 415, San Ramon, CA 94582",,,https://zeta.tech/contact,Corporate HQ per company contact page; no India address listed; careers page 403 to curl but linked from site

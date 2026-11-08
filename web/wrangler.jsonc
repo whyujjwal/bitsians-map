@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "bitsians-map",
+  "compatibility_date": "2026-11-01",
+  // Served at https://bitsians-map.whyujjwalraj.workers.dev; no per-version preview URLs.
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./.wrangler/deploy",
+    // Deploy builds go to .wrangler/deploy (git-ignored), separate from dist/,
+    // so a concurrent `astro build` can't delete files mid-upload.
+    // Pages build as c/<id>/index.html; serve them at /c/<id> (no redirect hop)
+    // and redirect /c/<id>/ to /c/<id>, matching the canonical URLs.
+    "html_handling": "drop-trailing-slash",
+    // Unknown paths get the built 404.html with a real 404 status.
+    "not_found_handling": "404-page"
+  }
+}
