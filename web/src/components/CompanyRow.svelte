@@ -20,7 +20,7 @@
     <span class="rbody">
       <span class="rtop">
         <span class="rname">{c.name}</span>
-        {#if c.hiring}<span class="hirepill">Hiring</span>{/if}
+        {#if c.hiring}<span class="hirepill">{c.roles ? `${c.roles} ${c.roles === 1 ? 'role' : 'roles'}` : 'Hiring'}</span>{/if}
         {#if t}
           <span class="rtrack" title={STATUS_LABEL[t.status]}>
             {#if isApplied(t.status)}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>

@@ -1,7 +1,8 @@
 <script lang="ts">
   import Tile from './Tile.svelte';
   import TrackControls from './TrackControls.svelte';
-  import { isInactive, batchTag, sourceHost, fixUrl, type Prepared } from '../lib/data';
+  import Roles from './Roles.svelte';
+  import { isInactive, batchTag, sourceHost, fixUrl, roleBoard, ATS_NAME, type Prepared } from '../lib/data';
   let { c, onback, backref = $bindable() }: { c: Prepared; onback: () => void; backref?: HTMLButtonElement } = $props();
   const place = $derived([c.city, c.country].filter(Boolean).join(', '));
   const status = $derived(isInactive(c.status) ? c.status[0].toUpperCase() + c.status.slice(1) : '');
@@ -29,7 +30,7 @@
   </svg>
 {/snippet}
 
-{#if c.hiring}<p class="banner"><i class="dot" aria-hidden="true"></i>Hiring now</p>{/if}
+{#if c.hiring}<p class="banner"><i class="dot" aria-hidden="true"></i>Hiring now{#if c.roles}, {c.roles} open {c.roles === 1 ? 'role' : 'roles'}{/if}</p>{/if}
 <div class="dhead">
   <button class="back" bind:this={backref} onclick={onback}>
     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -64,9 +65,11 @@
   {/if}
 
   <section class="dsec" aria-labelledby="d-roles">
-    <h3 id="d-roles" class="dlabel">{@render icon('roles')}{c.hiring ? 'Open roles' : 'Track this company'}</h3>
+    <h3 id="d-roles" class="dlabel">{@render icon('roles')}{c.hiring || c.roles != null ? 'Open roles' : 'Track this company'}{c.roles ? ` (${c.roles})` : ''}</h3>
     <div class="dcard">
-      <TrackControls id={c.id} name={c.name} careers={c.careers} />
+      {#if c.roles != null}<Roles id={c.id} />{/if}
+      <TrackControls id={c.id} name={c.name} careers={c.jobsUrl}
+        quiet={c.roles != null} cta={c.roles != null ? `See all on ${ATS_NAME[roleBoard(c.id)?.ats ?? ''] ?? 'their careers page'}` : 'View open roles'} />
     </div>
   </section>
 

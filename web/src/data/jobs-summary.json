@@ -1,0 +1,45 @@
+{
+ "fetchedAt": "2026-11-09T19:39:04Z",
+ "companies": {
+  "alphasense": {
+   "ats": "greenhouse",
+   "board": "https://job-boards.greenhouse.io/alphasense",
+   "n": 195
+  },
+  "atob": {
+   "ats": "ashby",
+   "board": "https://jobs.ashbyhq.com/atob",
+   "n": 8
+  },
+  "eltropy": {
+   "ats": "greenhouse",
+   "board": "https://job-boards.greenhouse.io/eltropyinc",
+   "n": 15
+  },
+  "falconx": {
+   "ats": "greenhouse",
+   "board": "https://job-boards.greenhouse.io/falconx",
+   "n": 14
+  },
+  "groww": {
+   "ats": "greenhouse",
+   "board": "https://job-boards.greenhouse.io/groww",
+   "n": 9
+  },
+  "lumilens": {
+   "ats": "ashby",
+   "board": "https://jobs.ashbyhq.com/lumilens",
+   "n": 163
+  },
+  "quizizz": {
+   "ats": "lever",
+   "board": "https://jobs.lever.co/Wayground",
+   "n": 10
+  },
+  "zenoti": {
+   "ats": "greenhouse",
+   "board": "https://job-boards.greenhouse.io/zenoti",
+   "n": 58
+  }
+ }
+}

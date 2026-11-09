@@ -48,6 +48,8 @@ class Tracker {
   entries = $state<Record<string, TrackEntry>>({});
   /** Company whose careers page was just opened: the panel asks whether they applied. */
   pending = $state('');
+  /** Role whose posting was just opened, used as the note when they mark the company applied. */
+  pendingRole = $state('');
   #ready = false;
 
   savedCount = $derived(Object.values(this.entries).filter((e) => e.status === 'saved').length);
@@ -84,8 +86,10 @@ class Tracker {
   }
   markApplied(id: string) {
     const e = this.entries[id];
-    this.#put(id, { ...e, status: 'applied', appliedAt: e?.appliedAt ?? today(), updatedAt: '' });
-    if (this.pending === id) this.pending = '';
+    const role = this.pending === id ? this.pendingRole : '';
+    this.#put(id, { ...e, status: 'applied', appliedAt: e?.appliedAt ?? today(), updatedAt: '',
+      ...(role && !e?.note && { note: role.slice(0, 280) }) });
+    if (this.pending === id) { this.pending = ''; this.pendingRole = ''; }
   }
   setStatus(id: string, status: TrackStatus) {
     const e = this.entries[id];

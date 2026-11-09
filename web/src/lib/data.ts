@@ -1,4 +1,5 @@
 import { continentOf, stateOf } from './regions';
+import jobsSummary from '../data/jobs-summary.json';
 
 export interface Founder { name: string; role: string; campus: string; gradYear: string }
 export interface Company {
@@ -12,6 +13,10 @@ export type TileKind = 'hiring' | 'active' | 'inactive';
 export interface Prepared extends Company {
   hay: string;            // lowercase search string
   hiring: boolean;
+  /** Open roles read from the company's job board; null when no board is known or the data is stale. */
+  roles: number | null;
+  /** Careers link, or the job board when there is no careers link. */
+  jobsUrl: string;
   kind: TileKind;
   large: boolean;         // large map tile (Unicorn, Soonicorn, Minicorn, Public)
   pos: [number, number] | null; // real [lng, lat], or null when unknown
@@ -45,8 +50,27 @@ export function sortSectors(entries: [string, number][]): [string, number][] {
 }
 
 export const isInactive = (status: string) => status.startsWith('acquired') || status === 'closed';
-export const tileKind = (c: Pick<Company, 'careers' | 'status'>): TileKind =>
-  c.careers ? 'hiring' : isInactive(c.status) ? 'inactive' : 'active';
+
+// ---- Open roles (scripts/fetch_jobs.py) ----
+export interface RoleBoard { ats: string; board: string; n: number }
+const BOARDS = jobsSummary.companies as Record<string, RoleBoard>;
+/** When the role lists were fetched. */
+export const ROLES_FETCHED_AT: string = jobsSummary.fetchedAt;
+/** Role counts older than this are not shown; the company falls back to its careers link. */
+const ROLES_MAX_AGE_DAYS = 14;
+export const rolesFresh = (now = Date.now()) =>
+  now - Date.parse(ROLES_FETCHED_AT) < ROLES_MAX_AGE_DAYS * 864e5;
+export const roleBoard = (id: string): RoleBoard | undefined => BOARDS[id];
+/** Open roles found on the company's job board, or null when unknown. */
+export const rolesOf = (id: string): number | null => (rolesFresh() && BOARDS[id] ? BOARDS[id].n : null);
+export const ATS_NAME: Record<string, string> = { greenhouse: 'Greenhouse', lever: 'Lever', ashby: 'Ashby' };
+/** Hiring: open roles were found, or (when the board can't be read) the company has a careers page. */
+export const isHiring = (c: Pick<Company, 'id' | 'careers'>) => {
+  const n = rolesOf(c.id);
+  return n == null ? !!c.careers : n > 0;
+};
+export const tileKind = (c: Pick<Company, 'id' | 'careers' | 'status'>): TileKind =>
+  isHiring(c) ? 'hiring' : isInactive(c.status) ? 'inactive' : 'active';
 
 // ---- Sorting ----
 export type Sort = 'notable' | 'newest' | 'az';
@@ -69,7 +93,9 @@ export function prepare(list: Company[]): Prepared[] {
   return list
     .map((c): Prepared => ({
       ...c,
-      hiring: !!c.careers,
+      hiring: isHiring(c),
+      roles: rolesOf(c.id),
+      jobsUrl: c.careers || BOARDS[c.id]?.board || '',
       kind: tileKind(c),
       large: isLargeStage(c.stage),
       pos: c.lat == null || c.lng == null ? null : [c.lng, c.lat],

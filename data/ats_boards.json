@@ -1,0 +1,42 @@
+{
+  "alphasense": {
+    "ats": "greenhouse",
+    "slug": "alphasense",
+    "source": "careers link"
+  },
+  "atob": {
+    "ats": "ashby",
+    "slug": "atob",
+    "source": "linked from https://www.atob.com/careers"
+  },
+  "eltropy": {
+    "ats": "greenhouse",
+    "slug": "eltropyinc",
+    "source": "careers link"
+  },
+  "falconx": {
+    "ats": "greenhouse",
+    "slug": "falconx",
+    "source": "careers link"
+  },
+  "groww": {
+    "ats": "greenhouse",
+    "slug": "groww",
+    "source": "linked from https://groww.in/careers"
+  },
+  "lumilens": {
+    "ats": "ashby",
+    "slug": "lumilens",
+    "source": "careers link"
+  },
+  "quizizz": {
+    "ats": "lever",
+    "slug": "Wayground",
+    "source": "linked from https://quizizz.com/careers"
+  },
+  "zenoti": {
+    "ats": "greenhouse",
+    "slug": "zenoti",
+    "source": "linked from https://www.zenoti.com/company/careers"
+  }
+}

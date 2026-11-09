@@ -19,6 +19,8 @@ Run from the repo root, in order (`python3 -I` each):
 3. `scripts/fetch_logos.py` — optional: refresh logos into `web/public/logos/` (then convert to WebP with `cwebp`; originals go to `data/logos/png/`).
 4. `scripts/export_web_data.py` — write `web/src/data/companies.json` (company pages) and `web/src/data/index-data.json` (map/list app).
 
+Open roles are refreshed separately, any time: `python3 -I scripts/fetch_jobs.py` reads the public Greenhouse, Lever and Ashby job boards listed in `data/ats_boards.json` and writes `web/src/data/jobs.json` and `jobs-summary.json`. Add `--detect` to look for boards for companies not in that file yet (it follows careers links and careers pages; it never guesses). Edit `data/ats_boards.json` by hand to add a board or block a wrong one (`null`). The site hides role counts 14 days after the last fetch and falls back to the careers link, so refresh and release at least every two weeks.
+
 Founders known only from Coresignal (a licensed source) are excluded from the site by default; `export_web_data.py --include-coresignal` ships them. Coresignal-derived files and `data/private/` are kept out of git.
 
 ## Site
