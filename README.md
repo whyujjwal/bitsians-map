@@ -23,13 +23,18 @@ Founders known only from Coresignal (a licensed source) are excluded from the si
 
 ## Site
 
+Needs Node 24 (`web/.nvmrc`) and pnpm 10.14 (`corepack enable`).
+
 ```bash
 cd web
-cp .env.example .env   # SITE_URL for canonical links and the sitemap
+cp .env.example .env   # SITE_URL for canonical links and the sitemap; builds stop without it
 pnpm install
 pnpm dev               # http://localhost:4321
-pnpm run deploy        # build and deploy to Cloudflare (needs `wrangler login`)
+pnpm run deploy:dry-run   # every release check and the build, nothing uploaded
+pnpm run deploy        # guarded release from main to Cloudflare (needs `wrangler login`)
 ```
+
+How releases are checked, verified and rolled back: [RELEASING.md](RELEASING.md).
 
 Not affiliated with BITS Pilani.
 
