@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.14.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "check": "astro check",
     "preview": "astro preview",
-    "deploy": "astro build --outDir .wrangler/deploy && wrangler deploy",
+    "deploy": "node scripts/release.mjs",
     "preview:edge": "astro build --outDir .wrangler/deploy && wrangler dev",
-    "deploy:dry-run": "astro build --outDir .wrangler/deploy && wrangler deploy --dry-run"
+    "deploy:dry-run": "node scripts/release.mjs --dry-run"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
