@@ -68,7 +68,7 @@ export function buildLayout(all: Prepared[]): Layout {
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [lng, lat] },
           properties: {
-            id: c.id, ini: logo ? '' : initials(c.name), img: logo ? `logo~${c.id}` : '', k: kind, ts: big ? 15 : 12,
+            id: c.id, nm: c.name, ini: logo ? '' : initials(c.name), img: logo ? `logo~${c.id}` : '', k: kind, ts: big ? 15 : 12,
             isz: size / 32, rsz: (size + 8) / 36,
             sk: (kind === 0 ? 100 : 0) + 10 - stageWeight(c.stage),
           },

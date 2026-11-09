@@ -2,7 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import raw from '../../data/companies.json';
 import TopBar from '../../components/TopBar.astro';
-import { initials, isInactive, tileKind } from '../../lib/data';
+import TrackControls from '../../components/TrackControls.svelte';
+import { initials, isInactive, tileKind, batchTag, fixUrl } from '../../lib/data';
 
 export function getStaticPaths() {
   return (raw as any[]).map((c) => ({ params: { id: c.id }, props: { c } }));
@@ -53,7 +54,7 @@ const jsonLd = {
           {c.founded && <span>Founded {c.founded}</span>}
           {status && <span class="st">{status}</span>}
         </p>
-        {c.careers && <a class="cta" href={c.careers} target="_blank" rel="noopener noreferrer">View open roles</a>}
+        <TrackControls client:load id={c.id} name={c.name} careers={c.careers} />
         <p class="links">
           {c.website && <a href={c.website} target="_blank" rel="noopener noreferrer">Website <span class="sr">({host(c.website)})</span></a>}
           {hasPos && <a href={`/?c=${encodeURIComponent(c.id)}`}>See it on the map</a>}
@@ -63,12 +64,15 @@ const jsonLd = {
           <section aria-labelledby="fh">
             <h2 id="fh">Founders</h2>
             <ul class="founders">
-              {c.founders.map((f: any) => (
-                <li>
-                  <span class="fname">{f.name}</span>
-                  <span class="frole">{f.role}{(f.campus || f.gradYear) && <span class="fcy">{[f.campus, f.gradYear].filter(Boolean).join(', ')}</span>}</span>
-                </li>
-              ))}
+              {c.founders.map((f: any) => {
+                const b = batchTag(f);
+                return (
+                  <li>
+                    <span class="fname">{f.name}</span>
+                    <span class="frole">{f.role}{b.text && <span class="batch" title={b.title}>{b.text}</span>}</span>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )}
@@ -81,6 +85,7 @@ const jsonLd = {
             </ul>
           </section>
         )}
+        <a class="fix" href={fixUrl(c)} target="_blank" rel="noopener noreferrer">Suggest a fix</a>
       </article>
     </main>
     <footer class="foot">Independent community project, not affiliated with BITS Pilani.</footer>

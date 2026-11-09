@@ -4,12 +4,17 @@
   import { onMount, untrack } from 'svelte';
   import { initials, type Prepared } from '../lib/data';
   import {
-    arcCollection, bubbles, buildLayout, cityCollection, collection, CAMPUSES,
+    bubbles, buildLayout, cityCollection, collection, CAMPUSES,
     type Bubble, type CampusName,
   } from '../lib/map-layout';
 
-  let { items, all, selectedId = '', hoveredId = '', onselect, oncampus, oninteract }: {
+  type Inset = { top: number; right: number; bottom: number; left: number };
+  let { items, all, selectedId = '', hoveredId = '', onselect, oncampus, oninteract, inset = { top: 0, right: 0, bottom: 0, left: 0 }, fitKey = '' }: {
     items: Prepared[]; all: Prepared[]; selectedId?: string; hoveredId?: string;
+    /** Changes when the place filters change: the camera then fits the results. */
+    fitKey?: string;
+    /** Space covered by floating panels; the camera centres and fits inside the rest. */
+    inset?: Inset;
     onselect: (id: string) => void;
     oncampus?: (name: CampusName) => void;
     oninteract?: () => void;
@@ -19,7 +24,35 @@
 
   const DEEP = 9;      // logo / monogram tiles from this zoom, city lights below
   const INDIA: maplibregl.LngLatBoundsLike = [[68, 6.5], [97.5, 35.5]];
-  const PEACOCK = '#44B3B0', MARIGOLD = '#F1A10A';
+  const PEACOCK = '#0A6C74', HIRE = '#23863F';
+
+  // Base maps are Esri's keyless raster tile services (street map and imagery, one host); label
+  // glyphs for our own layers are served from /map/fonts, so nothing else has to load.
+  const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services';
+  const STREET = [`${ESRI}/World_Street_Map/MapServer/tile/{z}/{y}/{x}`];
+  const STYLE: maplibregl.StyleSpecification = {
+    version: 8,
+    glyphs: '/map/fonts/{fontstack}/{range}.pbf',
+    sources: {
+      base: {
+        type: 'raster', tiles: STREET, tileSize: 256, maxzoom: 19,
+        attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, USGS, &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, and the GIS User Community',
+      },
+      sat: { type: 'raster', tiles: [`${ESRI}/World_Imagery/MapServer/tile/{z}/{y}/{x}`], tileSize: 256, maxzoom: 19, attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics' },
+      satlabels: { type: 'raster', tiles: [`${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`], tileSize: 256, maxzoom: 19 },
+    },
+    layers: [
+      { id: 'bg', type: 'background', paint: { 'background-color': '#F2EFE9' } },
+      { id: 'base', type: 'raster', source: 'base' },
+      { id: 'sat', type: 'raster', source: 'sat', layout: { visibility: 'none' } },
+      { id: 'satlabels', type: 'raster', source: 'satlabels', layout: { visibility: 'none' } },
+    ],
+  };
+  type Basemap = 'map' | 'satellite';
+  const BM_KEY = 'bitsians-map:basemap';
+  const readBasemap = (): Basemap => { try { return localStorage.getItem(BM_KEY) === 'satellite' ? 'satellite' : 'map'; } catch { return 'map'; } };
+  let basemap = $state<Basemap>('map');
+  let tilesFailing = $state(false);
 
   // `all` never changes: read it once, explicitly.
   const layout = untrack(() => buildLayout(all));
@@ -40,6 +73,7 @@
   let curBubbles: Bubble[] = [];
   let lastFlown = '';
   let firstData = true;
+  let lastFitKey = untrack(() => fitKey);
   let appliedSel = '';
   let appliedHov = '';
   let interacted = false;
@@ -87,19 +121,17 @@
     cv.width = cv.height = CHIP;
     const g = cv.getContext('2d')!;
     const dark = !!c.logoDark;
-    g.beginPath(); g.roundRect(0, 0, CHIP, CHIP, 28);
-    g.fillStyle = dark ? '#13222C' : '#FFFFFF'; g.fill();
-    const inset = c.hiring ? 14 : 8;
-    if (c.hiring) {
-      g.beginPath(); g.roundRect(4, 4, CHIP - 8, CHIP - 8, 24);
-      g.lineWidth = 8; g.strokeStyle = MARIGOLD; g.stroke();
-    }
+    g.beginPath(); g.roundRect(2, 2, CHIP - 4, CHIP - 4, 26);
+    g.fillStyle = dark ? '#16201B' : '#FFFFFF'; g.fill();
+    const inset = c.hiring ? 16 : 12;
+    g.beginPath(); g.roundRect(c.hiring ? 5 : 3, c.hiring ? 5 : 3, CHIP - (c.hiring ? 10 : 6), CHIP - (c.hiring ? 10 : 6), c.hiring ? 23 : 25);
+    g.lineWidth = c.hiring ? 8 : 3; g.strokeStyle = c.hiring ? HIRE : '#D5DBD5'; g.stroke();
     if (img && img.naturalWidth > 0) {
       const box = CHIP - inset * 2, k = Math.min(box / img.naturalWidth, box / img.naturalHeight);
       const w = img.naturalWidth * k, h = img.naturalHeight * k;
       g.drawImage(img, (CHIP - w) / 2, (CHIP - h) / 2, w, h);
     } else {
-      g.fillStyle = dark ? '#FFFFFF' : '#13222C';
+      g.fillStyle = dark ? '#FFFFFF' : '#16201B';
       g.font = '800 34px "Archivo Variable", "Archivo", system-ui, sans-serif';
       g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText(initials(c.name), CHIP / 2, CHIP / 2 + 2);
@@ -126,29 +158,15 @@
     img.src = c.logo; // on error the monogram placeholder simply stays
   }
 
-  // ---- arcs gradient (also drives the intro draw-out) -----------------------
-  const lerpHex = (t: number) => {
-    const a = [0x44, 0xb3, 0xb0], b = [0xf1, 0xa1, 0x0a];
-    return a.map((v, i) => Math.round(v + (b[i] - v) * t));
-  };
-  function gradient(p: number): any {
-    if (p >= 1) return ['interpolate', ['linear'], ['line-progress'], 0, PEACOCK, 1, MARIGOLD];
-    const q = Math.max(0.001, Math.min(0.99, p)), [r, g, b] = lerpHex(q);
-    return ['interpolate', ['linear'], ['line-progress'],
-      0, PEACOCK, q, `rgb(${r},${g},${b})`, Math.min(q + 0.004, 0.999), `rgba(${r},${g},${b},0)`, 1, `rgba(${r},${g},${b},0)`];
-  }
-
   const O = ['coalesce', ['feature-state', 'o'], 1] as any;
 
   /** (Re)create images, sources and layers once the style has loaded. */
-  function ensure(m: maplibregl.Map, intro: boolean) {
+  function ensure(m: maplibregl.Map) {
     const css = (name: string, fallback: string) =>
       getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
-    const ink = css('--ink', '#E7EEF0');
-    const paper = css('--paper', '#0B141A');
-    const ink3 = css('--ink-3', '#6E828B');
-    const marigold = css('--marigold', '#F4B02E');
-    const onMarigold = css('--on-marigold', '#13222C');
+    const ink = css('--ink', '#16201B');
+    const ink3 = css('--ink-3', '#66726C');
+    const hire = css('--hire', HIRE);
     const peacock = css('--peacock', PEACOCK);
 
     const opts = { sdf: true, pixelRatio: 2 };
@@ -158,34 +176,26 @@
 
     const bl = bubbles(layout, items);
     curBubbles = bl;
-    m.addSource('arcs', { type: 'geojson', lineMetrics: true, data: arcCollection(layout, items, bl) });
     m.addSource('cities', { type: 'geojson', promoteId: 'key', data: cityCollection(bl) });
     m.addSource('co', { type: 'geojson', promoteId: 'id', data: collection(layout, items) });
 
-    m.addLayer({
-      id: 'arcs', type: 'line', source: 'arcs', maxzoom: 7,
-      layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: {
-        'line-width': ['get', 'w'],
-        'line-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0.5, 7, 0],
-        'line-gradient': gradient(intro ? 0 : 1),
-      },
-    });
-    const hireGlow = ['case', ['==', ['get', 'h'], 1], 0.22, 0.18];
+    // City markers below z9: a solid dot (green when someone there is hiring) on a soft halo.
     m.addLayer({
       id: 'glow', type: 'circle', source: 'cities', maxzoom: DEEP,
       paint: {
-        'circle-radius': ['*', 2.6, ['get', 'r']], 'circle-blur': 1,
-        'circle-color': ['case', ['==', ['get', 'h'], 1], MARIGOLD, PEACOCK],
-        'circle-opacity': ['interpolate', ['linear'], ['zoom'], 8.4, ['*', O, hireGlow], 9, 0],
+        'circle-radius': ['*', 2, ['get', 'r']], 'circle-blur': 0.6,
+        'circle-color': ['case', ['==', ['get', 'h'], 1], hire, PEACOCK],
+        'circle-opacity': ['interpolate', ['linear'], ['zoom'], 8.4, ['*', O, 0.16], 9, 0],
       },
     });
     m.addLayer({
       id: 'core', type: 'circle', source: 'cities', maxzoom: DEEP,
       paint: {
-        'circle-radius': ['get', 'r'], 'circle-blur': 0.25,
-        'circle-color': ['case', ['==', ['get', 'h'], 1], '#FFE3A3', '#BDF2EC'],
+        'circle-radius': ['get', 'r'],
+        'circle-color': ['case', ['==', ['get', 'h'], 1], hire, ink],
+        'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 2,
         'circle-opacity': ['interpolate', ['linear'], ['zoom'], 8.4, O, 9, 0],
+        'circle-stroke-opacity': ['interpolate', ['linear'], ['zoom'], 8.4, O, 9, 0],
       },
     });
     // Monogram tiles (SDF) for companies without a logo ...
@@ -200,8 +210,8 @@
         'symbol-sort-key': ['get', 'sk'],
       },
       paint: {
-        'icon-color': ['match', ['get', 'k'], 0, marigold, 1, ink, ink3],
-        'text-color': ['match', ['get', 'k'], 0, onMarigold, 1, paper, ink3],
+        'icon-color': ['match', ['get', 'k'], 0, hire, 1, ink, ink3],
+        'text-color': ['match', ['get', 'k'], 0, '#FFFFFF', 1, '#FFFFFF', ink3],
         'icon-opacity': O, 'text-opacity': O,
       },
     });
@@ -214,6 +224,16 @@
         'symbol-sort-key': ['get', 'sk'],
       },
       paint: { 'icon-opacity': ['*', O, ['case', ['==', ['get', 'k'], 2], 0.45, 1]] },
+    });
+    // Company names under the markers once there is room; overlapping names drop out.
+    m.addLayer({
+      id: 'names', type: 'symbol', source: 'co', minzoom: 10,
+      layout: {
+        'text-field': ['get', 'nm'], 'text-font': ['Noto Sans Bold'], 'text-size': 11,
+        'text-anchor': 'top', 'text-offset': [0, 1.55], 'text-max-width': 9, 'text-padding': 2,
+        'symbol-sort-key': ['-', 0, ['get', 'sk']],
+      },
+      paint: { 'text-color': ink, 'text-halo-color': '#FFFFFF', 'text-halo-width': 2, 'text-opacity': O },
     });
     m.addLayer({
       id: 'ring', type: 'symbol', source: 'co', minzoom: DEEP,
@@ -272,8 +292,18 @@
   function declutter() {
     if (!map || deep || !markers.length) return;
     const lowZ = map.getZoom() < 3;
+    // On the globe, points more than ~75 degrees from the view centre sit on or past the horizon:
+    // hide those markers instead of letting their labels pile up along the edge.
+    const ctr = map.getCenter();
+    const R = Math.PI / 180;
+    const far = (lng: number, lat: number) =>
+      Math.sin(lat * R) * Math.sin(ctr.lat * R) + Math.cos(lat * R) * Math.cos(ctr.lat * R) * Math.cos((lng - ctr.lng) * R) < Math.cos(75 * R);
+    const W = host.clientWidth, H = host.clientHeight;
     const pts = markers.map((k) => map!.project([k.lng, k.lat]));
-    const taken: number[][] = markers.map((k, i) => [pts[i].x - k.r, pts[i].y - k.r, pts[i].x + k.r, pts[i].y + k.r]);
+    const hidden = markers.map((k) => far(k.lng, k.lat));
+    markers.forEach((k, i) => k.el.classList.toggle('far', hidden[i]));
+    for (const cm of campusMarkers) cm.el.classList.toggle('far', far(cm.pos[0], cm.pos[1]));
+    const taken: number[][] = markers.map((k, i) => hidden[i] ? [0, 0, 0, 0] : [pts[i].x - k.r, pts[i].y - k.r, pts[i].x + k.r, pts[i].y + k.r]);
     const hit = (a: number[], skip: number) => {
       for (let j = 0; j < taken.length; j++) {
         if (j === skip) continue;
@@ -282,38 +312,52 @@
       }
       return false;
     };
-    // Priority: cities with 3+ companies label first, then the four campus labels (below, left,
-    // above or right of the ring, whichever is free; hidden if none is), then the small cities.
-    const BIG_R = 3 + 2.2 * Math.sqrt(3);
-    let campusesPlaced = false;
-    const placeCampuses = () => {
-      campusesPlaced = true;
-      for (const cm of campusMarkers) {
-        const p = map!.project(cm.pos);
-        const w = cm.lab.offsetWidth, h = cm.lab.offsetHeight;
-        const opts: [string, number[]][] = [
-          ['below', [p.x - w / 2, p.y + 10, p.x + w / 2, p.y + 12 + h]],
-          ['left', [p.x - 14 - w, p.y - h / 2 - 1, p.x - 10, p.y + h / 2 + 1]],
-          ['above', [p.x - w / 2, p.y - 12 - h, p.x + w / 2, p.y - 10]],
-          ['right', [p.x + 10, p.y - h / 2 - 1, p.x + 14 + w, p.y + h / 2 + 1]],
-        ];
-        const pick = opts.find(([, b]) => !hit(b, -1));
-        cm.el.dataset.side = pick ? pick[0] : 'none';
-        if (pick) taken.push(pick[1]);
-      }
+    // Priority: cities with 10+ companies, then the four campus labels (always shown: the first
+    // free side of the pin, else below), then the other cities by size.
+    const placeCampus = (cm: CampusMk) => {
+      const p = map!.project(cm.pos);
+      const w = cm.lab.offsetWidth, h = cm.lab.offsetHeight;
+      const opts: [string, number[]][] = [
+        ['below', [p.x - w / 2, p.y + 18, p.x + w / 2, p.y + 20 + h]],
+        ['left', [p.x - 22 - w, p.y - h / 2 - 1, p.x - 18, p.y + h / 2 + 1]],
+        ['above', [p.x - w / 2, p.y - 20 - h, p.x + w / 2, p.y - 18]],
+        ['right', [p.x + 18, p.y - h / 2 - 1, p.x + 22 + w, p.y + h / 2 + 1]],
+      ];
+      // Campuses always keep a label: the first free side inside the map, else the first inside it.
+      const inside = opts.filter(([, b]) => b[0] >= 4 && b[2] <= W - 4 && b[1] >= 4 && b[3] <= H - 4);
+      const pick = inside.find(([, b]) => !hit(b, -1)) ?? inside[0] ?? opts[0];
+      cm.el.dataset.side = pick[0];
+      taken.push(pick[1]);
     };
+    // Campus pins and their rings block city labels around them.
+    for (const cm of campusMarkers) {
+      const p = map!.project(cm.pos);
+      taken.push([p.x - 16, p.y - 16, p.x + 16, p.y + 16]);
+    }
+    const BIG_R = 3 + 2.2 * Math.sqrt(10);
+    let campusesPlaced = false;
     markers.forEach((k, i) => {
-      if (!campusesPlaced && k.r < BIG_R - 0.01) placeCampuses();
+      if (!campusesPlaced && k.r < BIG_R - 0.01) { campusesPlaced = true; for (const cm of campusMarkers) placeCampus(cm); }
+      if (hidden[i]) return;
       if (!k.w) { k.w = k.lab.offsetWidth; k.h = k.lab.offsetHeight; }
       const y = pts[i].y;
-      const right = [pts[i].x + k.r + 6, y - k.h / 2 - 2, pts[i].x + k.r + 10 + k.w, y + k.h / 2 + 2];
-      const left = [pts[i].x - k.r - 10 - k.w, y - k.h / 2 - 2, pts[i].x - k.r - 6, y + k.h / 2 + 2];
-      const side = lowZ && i >= 5 ? '' : !hit(right, i) ? 'r' : !hit(left, i) ? 'l' : '';
+      const x = pts[i].x;
+      const boxes: [string, number[]][] = [
+        ['r', [x + k.r + 6, y - k.h / 2 - 2, x + k.r + 10 + k.w, y + k.h / 2 + 2]],
+        ['l', [x - k.r - 10 - k.w, y - k.h / 2 - 2, x - k.r - 6, y + k.h / 2 + 2]],
+        ['b', [x - k.w / 2 - 2, y + k.r + 4, x + k.w / 2 + 2, y + k.r + 8 + k.h]],
+        ['a', [x - k.w / 2 - 2, y - k.r - 8 - k.h, x + k.w / 2 + 2, y - k.r - 4]],
+      ];
+      const ok = (b: number[]) => b[0] >= 0 && b[2] <= W && !hit(b, i);
+      const pick = lowZ && i >= 5 ? undefined : boxes.find(([, b]) => ok(b));
+      const side = pick?.[0] ?? '';
       k.el.classList.toggle('nolab', side === '');
       k.el.classList.toggle('left', side === 'l');
-      if (side) taken.push(side === 'l' ? left : right);
+      k.el.classList.toggle('below', side === 'b');
+      k.el.classList.toggle('above', side === 'a');
+      if (pick) taken.push(pick[1]);
     });
-    if (!campusesPlaced) placeCampuses();
+    if (!campusesPlaced) for (const cm of campusMarkers) placeCampus(cm);
   }
 
   // ---- campuses ------------------------------------------------------------
@@ -322,30 +366,68 @@
       const el = document.createElement('button');
       el.type = 'button'; el.className = 'campus';
       el.setAttribute('aria-label', `${c.name} campus: show its alumni companies`);
-      const ring = document.createElement('span'); ring.className = 'ring';
-      const lab = document.createElement('span'); lab.className = 'cl'; lab.textContent = `${c.name} campus`;
-      el.append(ring, lab);
+      el.style.zIndex = '3';
+      const pin = document.createElement('span'); pin.className = 'pin';
+      pin.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/><path d="M22 9v6"/></svg>';
+      const lab = document.createElement('span'); lab.className = 'cl';
+      const nm = document.createElement('span'); nm.textContent = `${c.name} campus`;
+      const ct = document.createElement('span'); ct.className = 'cc';
+      lab.append(nm, ct);
+      el.append(pin, lab);
       el.addEventListener('click', (e) => { e.stopPropagation(); oncampus?.(c.name); });
       const marker = new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat(c.pos).addTo(m);
       return { marker, el, lab, pos: c.pos };
     });
+    updateCampusCounts();
+  }
+  function updateCampusCounts() {
+    for (const cm of campusMarkers) {
+      const name = cm.lab.firstChild?.textContent?.replace(' campus', '') ?? '';
+      const n = items.reduce((k, c) => k + (c.campuses.includes(name) ? 1 : 0), 0);
+      const ct = cm.lab.querySelector('.cc');
+      if (ct) ct.textContent = n ? String(n) : '';
+      cm.el.setAttribute('aria-label', `${name} campus, ${n} ${n === 1 ? 'company' : 'companies'} by its alumni: show them`);
+    }
+  }
+
+  // ---- base map ------------------------------------------------------------
+  function applyBasemap() {
+    if (!map?.getLayer('base')) return;
+    const sat = basemap === 'satellite';
+    map.setLayoutProperty('base', 'visibility', sat ? 'none' : 'visible');
+    map.setLayoutProperty('sat', 'visibility', sat ? 'visible' : 'none');
+    map.setLayoutProperty('satlabels', 'visibility', sat ? 'visible' : 'none');
+  }
+  function setBasemap(b: Basemap) {
+    basemap = b;
+    try { localStorage.setItem(BM_KEY, b); } catch { /* private mode */ }
+    applyBasemap();
+  }
+  function retryTiles() {
+    tilesFailing = false;
+    (map?.getSource('base') as maplibregl.RasterTileSource | undefined)?.setTiles(STREET);
+    (map?.getSource('sat') as maplibregl.RasterTileSource | undefined)?.setTiles([`${ESRI}/World_Imagery/MapServer/tile/{z}/{y}/{x}`]);
   }
 
   // ---- camera --------------------------------------------------------------
   function goTo(center: [number, number], zoom: number, bottom = 0) {
     if (!map) return;
-    const padding = { top: 0, left: 0, right: 0, bottom };
+    const padding = { ...inset, bottom: inset.bottom + bottom };
     if (reduced()) map.jumpTo({ center, zoom, padding });
     else map.flyTo({ center, zoom, padding, duration: 900, essential: false });
   }
   function fit(b: maplibregl.LngLatBoundsLike, opts: maplibregl.FitBoundsOptions = {}) {
-    map?.fitBounds(b, { padding: 48, duration: reduced() ? 0 : 600, ...opts });
+    if (!map) return;
+    // The map's own padding already covers the floating panels (see setPadding below), and
+    // fitBounds adds its padding on top of it, so only the breathing room goes here.
+    map.setPadding(inset);
+    map.fitBounds(b, { padding: 48, duration: reduced() ? 0 : 600, ...opts });
   }
   function showWorld() {
     if (!map) return;
-    const d = Math.min(host.clientWidth, host.clientHeight) * 0.82;
-    const zoom = Math.max(0.8, Math.log2((Math.PI * d) / 512));
-    const o = { center: [45, 20] as [number, number], zoom, padding: { top: 0, left: 0, right: 0, bottom: 0 } };
+    const w = host.clientWidth - inset.left - inset.right;
+    const zoom = Math.max(0.8, Math.log2(w / 512) + 0.2);
+    const o = { center: [40, 22] as [number, number], zoom, padding: inset };
     if (reduced()) map.jumpTo(o); else map.easeTo({ ...o, duration: 900 });
   }
   function updateRegion() {
@@ -371,7 +453,6 @@
     const t0 = performance.now();
     setCities(() => 0);
     const lastO = new Float32Array(curBubbles.length).fill(-1);
-    let lastP = -1;
     requestAnimationFrame(() => requestAnimationFrame(() => (lit = true)));
     if (finalCam) m.easeTo({ center: finalCam.center, zoom: finalCam.zoom, pitch: 0, duration: 2300, easing: easeOut, essential: true });
     const tick = () => {
@@ -382,8 +463,6 @@
         const o = Math.round(easeOut(clamp01((t - start) / 450)) * 50) / 50;
         if (o !== lastO[i]) { lastO[i] = o; setState('cities', b.key, { o }); }
       });
-      const p = Math.round(easeOut(clamp01((t - 500) / 1400)) * 100) / 100;
-      if (p !== lastP && m.getLayer('arcs')) { lastP = p; m.setPaintProperty('arcs', 'line-gradient', gradient(p)); }
       if (t >= 2000) { finishIntro(false); return; }
       introRaf = requestAnimationFrame(tick);
     };
@@ -397,7 +476,6 @@
     introActive = false;
     cancelAnimationFrame(introRaf);
     setCities(() => 1);
-    if (map?.getLayer('arcs')) map.setPaintProperty('arcs', 'line-gradient', gradient(1));
     if (jumpCamera && map && finalCam) { map.stop(); map.jumpTo({ center: finalCam.center, zoom: finalCam.zoom, pitch: 0 }); }
   }
 
@@ -456,34 +534,44 @@
     const sel = selectedId ? layout.tiles.get(selectedId) : undefined;
     const start: maplibregl.MapOptions = sel
       ? { center: [sel.lng, sel.lat], zoom: 11.6 }
-      : { bounds: mostIndia ? INDIA : (tileBounds(items) ?? INDIA), fitBoundsOptions: { padding: { top: 24, left: 24, right: 24, bottom: sel ? 24 : 200 }, maxZoom: 6 } };
+      : { bounds: mostIndia ? INDIA : (tileBounds(items) ?? INDIA), fitBoundsOptions: { padding: { top: inset.top + 48, left: inset.left + 48, right: inset.right + 48, bottom: inset.bottom + 48 }, maxZoom: mostIndia ? 6 : 9 } };
     if (sel) lastFlown = selectedId;
+    basemap = readBasemap();
     const intro = !sel && !reduced();
     lit = !intro;
 
     const m = new maplibregl.Map({
-      container: host, style: '/map/night.json', attributionControl: { compact: true },
+      container: host, style: STYLE, attributionControl: { compact: true },
       minZoom: 0.8, maxPitch: 60, dragRotate: false, pitchWithRotate: false, ...start,
     });
     map = m;
-    if (sel && innerWidth < 960) m.setPadding({ top: 0, left: 0, right: 0, bottom: Math.round(host.clientHeight * 0.45) });
+    m.setPadding(sel && innerWidth < 960 ? { ...inset, bottom: Math.round(host.clientHeight * 0.45) } : inset);
     if (intro) {
       finalCam = { center: [m.getCenter().lng, m.getCenter().lat], zoom: m.getZoom() };
-      m.jumpTo({ center: [finalCam.center[0] - 16, finalCam.center[1] - 6], zoom: Math.max(0.9, finalCam.zoom - 1.4), pitch: 28 });
+      m.jumpTo({ center: [finalCam.center[0] - 6, finalCam.center[1] - 3], zoom: Math.max(0.9, finalCam.zoom - 0.8) });
     } else {
       finalCam = { center: [m.getCenter().lng, m.getCenter().lat], zoom: m.getZoom() };
     }
     if (import.meta.env.DEV) {
       (window as any).__map = m;
-      m.on('error', (e) => console.error('[map]', e.error?.message ?? e));
+      m.on('error', (e) => console.warn('[map]', e.error?.message ?? e));
     }
     m.touchZoomRotate.disableRotation();
     m.touchPitch.disable();
-    m.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    m.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
     addCampuses(m);
 
     m.on('styleimagemissing', onMissingImage);
-    m.on('style.load', () => { ensure(m, intro); ready = true; if (intro) runIntro(m); });
+    m.on('style.load', () => { ensure(m); applyBasemap(); ready = true; if (intro) runIntro(m); });
+    // Tell people when base tiles fail (offline, blocked by an extension) instead of a blank map.
+    let fails = 0;
+    m.on('error', (e: any) => {
+      const id = e?.sourceId ?? e?.source?.id;
+      if (id === 'base' || id === 'sat') { fails++; if (fails >= 3) tilesFailing = true; }
+    });
+    m.on('sourcedata', (e: any) => {
+      if ((e.sourceId === 'base' || e.sourceId === 'sat') && e.tile && e.tile.state === 'loaded') { fails = 0; tilesFailing = false; }
+    });
     m.on('zoom', () => onZoom(m));
     m.on('moveend', () => { updateRegion(); declutter(); });
     m.on('click', ['tiles', 'chips'], (e) => {
@@ -537,17 +625,37 @@
     curBubbles = bl;
     (map.getSource('co') as maplibregl.GeoJSONSource | undefined)?.setData(collection(layout, list));
     (map.getSource('cities') as maplibregl.GeoJSONSource | undefined)?.setData(cityCollection(bl));
-    (map.getSource('arcs') as maplibregl.GeoJSONSource | undefined)?.setData(arcCollection(layout, list, bl));
     renderLabels(bl);
-    // Only move the camera when nothing from the results is in view.
-    if (map.isMoving()) return;
-    const view = map.getBounds();
-    let any = false;
-    for (const c of list) {
-      const t = layout.tiles.get(c.id);
-      if (t && view.contains([t.lng, t.lat])) { any = true; break; }
-    }
-    if (!any) { const b = tileBounds(list); if (b) fit(b, { maxZoom: 10 }); }
+    updateCampusCounts();
+    // Place filters changed: fit the results. Otherwise only move the camera when nothing from
+    // the results is in view. Either way, decide once the camera has stopped.
+    const m = map;
+    const refit = fitKey !== lastFitKey;
+    lastFitKey = fitKey;
+    const check = () => {
+      if (items !== list) return; // filters changed again meanwhile
+      if (!refit) {
+        const view = m.getBounds();
+        for (const c of list) {
+          const t = layout.tiles.get(c.id);
+          if (t && view.contains([t.lng, t.lat])) return;
+        }
+      }
+      const b = tileBounds(list); if (b) fit(b, { maxZoom: 10 });
+    };
+    if (m.isMoving()) m.once('moveend', check); else check();
+  });
+
+  // Keep the camera's padding in step with the floating panels.
+  // setPadding is a jump, which would cancel a camera animation in flight, so wait for it to end.
+  $effect(() => {
+    const p = { ...inset };
+    const m = map;
+    if (!ready || !m) return;
+    const same = (q: Inset) => q.top === p.top && q.right === p.right && q.bottom === p.bottom && q.left === p.left;
+    if (same(m.getPadding() as Inset)) return;
+    if (m.isMoving()) m.once('moveend', () => { if (same({ ...inset })) m.setPadding(p); });
+    else m.setPadding(p);
   });
 
   // Selection: ring + fly to tile.
@@ -570,10 +678,23 @@
 <div class="root" class:deep class:lit>
   <div class="canvas" bind:this={host} role="region" aria-label="Map of companies. The list has the same information in an accessible form."></div>
 
-  <div class="seg" role="group" aria-label="Map region">
-    <button type="button" aria-pressed={region === 'India'} onclick={() => fit(INDIA)}>India</button>
-    <button type="button" aria-pressed={region === 'World'} onclick={showWorld}>World</button>
+  <div class="mapctl">
+    <div class="seg" role="group" aria-label="Map type">
+      <button type="button" aria-pressed={basemap === 'map'} onclick={() => setBasemap('map')}>Map</button>
+      <button type="button" aria-pressed={basemap === 'satellite'} onclick={() => setBasemap('satellite')}>Satellite</button>
+    </div>
+    <div class="seg" role="group" aria-label="Jump to">
+      <button type="button" aria-pressed={region === 'India'} onclick={() => fit(INDIA)}>India</button>
+      <button type="button" aria-pressed={region === 'World'} onclick={showWorld}>World</button>
+    </div>
   </div>
+
+  {#if tilesFailing}
+    <div class="tilefail" role="alert">
+      <p>Map tiles aren&rsquo;t loading. Check your connection, or allow server.arcgisonline.com in your ad blocker.</p>
+      <button type="button" onclick={retryTiles}>Try again</button>
+    </div>
+  {/if}
 
   {#if deep}
     <p class="note">Companies are grouped around each city centre; exact offices aren't mapped yet.</p>
@@ -581,32 +702,45 @@
 </div>
 
 <style>
-  .root { position: absolute; inset: 0; background: #060C11; }
+  .root { position: absolute; inset: 0; background: #DCE8EC; }
   .canvas { position: absolute; inset: 0; }
 
-  .seg {
-    position: absolute; top: 12px; left: 12px; z-index: 2; display: flex; padding: 3px; gap: 2px;
-    background: var(--surface); border-radius: 999px;
-    box-shadow: 0 1px 2px rgb(0 0 0 / .08), 0 4px 16px rgb(0 0 0 / .08);
+  .mapctl {
+    position: absolute; z-index: 2; right: calc(var(--inset-r, 0px) + 12px); top: calc(var(--inset-t, 0px) + 12px);
+    display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; max-width: calc(100% - var(--inset-l, 0px) - var(--inset-r, 0px) - 24px);
   }
-  @media (max-width: 959px) { .seg { top: 64px; } }
+  .seg { display: flex; padding: 4px; gap: 4px; background: var(--surface); border-radius: 999px; box-shadow: var(--float); }
+  .tilefail {
+    position: absolute; z-index: 3; left: calc(var(--inset-l, 0px) + 12px); right: calc(var(--inset-r, 0px) + 12px); top: calc(var(--inset-t, 0px) + 64px);
+    margin: 0 auto; max-width: 440px; display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 16px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--float); font-size: 13px; color: var(--ink);
+  }
+  .tilefail p { margin: 0; flex: 1; }
+  .tilefail button { flex: none; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--ink); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
   .seg button {
-    font: inherit; font-size: 13px; font-weight: 600; line-height: 1; padding: 7px 14px; border: 0; border-radius: 999px;
-    background: transparent; color: var(--ink-2); cursor: pointer;
+    font: inherit; font-size: 13px; font-weight: 500; line-height: 1; padding: 8px 12px; border: 0; border-radius: 999px;
+    background: transparent; color: var(--ink-2); cursor: pointer; transition: background-color .12s, color .12s;
   }
-  .seg button[aria-pressed='true'] { background: var(--peacock); color: var(--on-peacock); }
+  .seg button:hover { color: var(--ink); }
+  .seg button[aria-pressed='true'] { background: var(--ink); color: #fff; }
   .seg button:focus-visible { outline: 2px solid var(--peacock); outline-offset: 2px; }
+  .root :global(.maplibregl-ctrl-bottom-right) { right: var(--inset-r, 0px); bottom: calc(var(--inset-b, 0px) + 56px); }
+  .root :global(.maplibregl-ctrl-group) { border-radius: 12px; box-shadow: var(--float); overflow: hidden; }
+  .root :global(.maplibregl-ctrl-group button) { width: 36px; height: 36px; }
 
   .note {
-    position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 2; margin: 0;
-    width: max-content; max-width: min(440px, calc(100% - 300px)); text-align: center;
+    position: absolute; z-index: 2; top: calc(var(--inset-t, 0px) + 64px);
+    left: calc(var(--inset-l, 0px) + (100% - var(--inset-l, 0px) - var(--inset-r, 0px)) / 2); transform: translateX(-50%); margin: 0;
+    width: max-content; max-width: min(420px, calc(100% - var(--inset-l, 0px) - var(--inset-r, 0px) - 32px)); text-align: center;
+    padding: 8px 12px; border-radius: 999px; background: var(--surface); box-shadow: var(--float);
     font-size: 12px; line-height: 1.35; font-weight: 500; color: var(--ink-2); pointer-events: none;
-    text-shadow: 0 0 3px var(--paper), 0 0 8px var(--paper);
   }
-  @media (max-width: 959px) { .note { top: 108px; max-width: calc(100% - 32px); } }
+
+  @media (max-width: 959px) { .note { top: calc(var(--inset-t, 0px) + 108px); } }
 
   /* City labels: DOM markers so they can use Archivo. Hidden once tiles take over. */
   .root.deep :global(.city), .root.deep :global(.campus .cl) { display: none; }
+  :global(.city.far), :global(.campus.far) { visibility: hidden; }
   :global(.city) {
     width: var(--d); height: var(--d); padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer;
     font-family: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
@@ -614,36 +748,43 @@
   :global(.city .lab) {
     position: absolute; left: calc(100% + 6px); top: 50%; transform: translateY(-50%);
     display: grid; gap: 2px; text-align: left; white-space: nowrap; pointer-events: none;
-    color: var(--ink); text-shadow: 0 0 2px #0B141A, 0 0 2px #0B141A, 0 1px 3px #0B141A;
-    opacity: 0;
+    padding: 4px 8px; border-radius: 8px; background: var(--surface); box-shadow: 0 1px 2px rgb(22 32 27 / .12), 0 2px 8px rgb(22 32 27 / .08);
+    color: var(--ink); opacity: 0;
   }
   .root.lit :global(.city .lab) { opacity: 1; transition: opacity .5s ease var(--dly, 0ms); }
   :global(.city .cl-hd) { display: flex; gap: 6px; align-items: baseline; }
-  :global(.city .nm) { font-size: 15px; line-height: 1; font-weight: 760; font-variation-settings: 'wdth' 70, 'wght' 760; }
-  :global(.city .ct) { font-size: 13px; line-height: 1; font-weight: 500; color: var(--ink-2); font-variant-numeric: tabular-nums; font-variation-settings: 'wdth' 85; }
-  :global(.city .hr) { font-size: 13px; line-height: 1; font-weight: 700; color: var(--marigold); font-variation-settings: 'wdth' 85; }
+  :global(.city .nm) { font-size: 13px; line-height: 1.1; font-weight: 600; }
+  :global(.city .ct) { font-size: 12px; line-height: 1.1; font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  :global(.city .hr) { font-size: 12px; line-height: 1.1; font-weight: 600; color: var(--hire-ink); font-variant-numeric: tabular-nums; }
   :global(.city.left .lab) { left: auto; right: calc(100% + 6px); text-align: right; justify-items: end; }
   :global(.city.left .cl-hd) { flex-direction: row-reverse; }
+  :global(.city.below .lab) { left: 50%; top: calc(100% + 4px); transform: translateX(-50%); }
+  :global(.city.above .lab) { left: 50%; top: auto; bottom: calc(100% + 4px); transform: translateX(-50%); }
   .root.lit :global(.city.nolab .lab) { opacity: 0; }
-  .root.lit :global(.city:hover .lab), .root.lit :global(.city:focus-visible .lab) { opacity: 1; transition-delay: 0ms; }
+  .root.lit :global(.city:hover .lab), .root.lit :global(.city:focus-visible .lab) { opacity: 1; transition-delay: 0ms; z-index: 1; }
   :global(.city:focus-visible) { outline: 2px solid var(--peacock); outline-offset: 4px; }
 
-  /* Campuses: thin white ring plus label. */
+  /* Campuses: the strongest marker on the map, a peacock pin with a cap and an always-on label. */
   :global(.campus) {
-    width: 16px; height: 16px; padding: 0; border: 0; background: transparent; cursor: pointer;
+    width: 32px; height: 32px; padding: 0; border: 0; background: transparent; cursor: pointer;
     font-family: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
   }
-  :global(.campus .ring) { position: absolute; inset: 0; border: 1.5px solid #fff; border-radius: 50%; box-shadow: 0 0 6px rgb(255 255 255 / .35); }
-  :global(.campus .cl) {
-    position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%); white-space: nowrap; pointer-events: none;
-    font-size: 12px; line-height: 1; font-weight: 600; color: var(--ink-2);
-    text-shadow: 0 0 2px #0B141A, 0 0 2px #0B141A, 0 1px 3px #0B141A;
+  :global(.campus .pin) {
+    position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%;
+    background: var(--peacock); border: 3px solid #fff; box-shadow: 0 0 0 4px color-mix(in oklab, var(--peacock) 25%, transparent), 0 2px 8px rgb(22 32 27 / .3);
+    transition: transform .12s;
   }
+  :global(.campus .pin svg) { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  :global(.campus .cl) {
+    position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); white-space: nowrap; pointer-events: none;
+    display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--peacock); color: #fff;
+    font-size: 12px; line-height: 1.2; font-weight: 600; box-shadow: 0 1px 4px rgb(22 32 27 / .25);
+  }
+  :global(.campus .cc) { font-weight: 500; opacity: .85; font-variant-numeric: tabular-nums; }
+  :global(.campus .cc:empty) { display: none; }
   :global(.campus[data-side='left'] .cl) { top: 50%; left: auto; right: calc(100% + 6px); transform: translateY(-50%); }
   :global(.campus[data-side='right'] .cl) { top: 50%; left: calc(100% + 6px); transform: translateY(-50%); }
-  :global(.campus[data-side='above'] .cl) { top: auto; bottom: calc(100% + 4px); }
-  :global(.campus[data-side='none'] .cl) { opacity: 0; }
-  :global(.campus[data-side='none']:hover .cl), :global(.campus[data-side='none']:focus-visible .cl) { opacity: 1; }
-  :global(.campus:hover .ring) { background: rgb(255 255 255 / .2); }
-  :global(.campus:focus-visible) { outline: 2px solid var(--peacock); outline-offset: 3px; border-radius: 50%; }
+  :global(.campus[data-side='above'] .cl) { top: auto; bottom: calc(100% + 6px); }
+  :global(.campus:hover .pin) { transform: scale(1.08); }
+  :global(.campus:focus-visible) { outline: 2px solid var(--peacock); outline-offset: 4px; border-radius: 50%; }
 </style>

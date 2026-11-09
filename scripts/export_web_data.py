@@ -175,7 +175,7 @@ def main() -> int:
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     # Slim copy for the index page's app bundle: only the fields the map/list UI reads.
     keep = ("id", "name", "website", "careers", "status", "city", "country", "lat", "lng", "precision",
-            "founded", "sector", "stage", "oneLine", "campuses", "logo", "logoDark")
+            "founded", "sector", "stage", "oneLine", "campuses", "logo", "logoDark", "sources")
     slim = [{**{k: o[k] for k in keep},
              "founders": [{k: f[k] for k in ("name", "role", "campus", "gradYear")} for f in o["founders"]]}
             for o in out]
