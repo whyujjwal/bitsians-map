@@ -1,5 +1,28 @@
 # BITSians Startup Map — design spec
 
+## v4 — "Field map" (2026-11-09, supersedes v3's dark "City lights" theme)
+
+Light, map-first layout with floating cards, modelled on map-based job boards. Tokens live in `src/styles/global.css` (`--paper #E9ECE8`, `--surface #FFF`, `--ink #16201B`, `--peacock #0A6C74`, `--hire #23863F`; all text pairs ≥ 4.5:1).
+
+- **Frame:** desktop is an 80px icon rail (Discover, Saved, Applied, About) beside a rounded stage (28px) holding a full-bleed map.
+- **Base maps:** Esri's keyless raster services, switchable in the map's top-right control: **Map** (World Street Map) and **Satellite** (World Imagery plus the boundaries-and-places label overlay). The choice is remembered per browser. Glyphs for our own labels are self-hosted in `public/map/fonts`, so no other map host is needed; if base tiles fail three times the map says so and offers "Try again". (OpenFreeMap failed to load for some visitors; CARTO now watermarks keyless tiles.)
+- **Floating cards over the map:** top bar (wordmark, search, Saved n, Applied n, "Add a company"); list card left (380px); detail card right (420px) with a green "Hiring now" banner, icon fact rows, Open roles card (careers CTA + tracker), founders, sources. Bottom-left pills: company count, hiring toggle, not-on-the-map.
+- **Map:** no campus-to-city arcs. Campuses are the strongest marker: a 32px peacock pin with a cap icon and an always-visible label with the alumni-company count. Cities below z9 are dots (green = someone hiring) with white label pills, placed on whichever side is free (right, left, below, above) and never off-screen; label priority is cities with 10+ companies, then campuses, then the rest. From z9, logo chips with a green ring when hiring, names under them from z10.
+- **Location filter:** one "Location" menu with Continent, Country, State and City groups (states from `src/lib/regions.ts`); changing any place filter refits the map to the results. The camera's padding follows the cards (`inset` prop on Map) and is only changed when the camera is still.
+- **Mobile:** the map fills the screen; top bar is logo + search + About; bottom pills are List/Map, hiring, Saved, Applied; list is a full card, detail a bottom sheet.
+- **Green means hiring** (replaces marigold). Black is the primary button colour.
+
+## v3.1 — polish pass (2026-11-09)
+
+From `ux-audit-site-2026-11-09.md`. Supersedes v3/v2 where they conflict.
+
+- **Batch tag**, the one signature detail: wherever a founder appears (list row, detail, company page) the campus and batch read `Pilani ’08`, or `Class of ’10` when only the year is known, in `--ink-3` with tabular figures and a `title` spelling it out. A bare year is never shown.
+- **One accent per row:** stage labels are always `--ink-2`; marigold is the only coloured label (Hiring). Peacock stays for selection, links and focus.
+- **Map labels:** Pilani campus is labelled first, then cities with 3+ companies, then the other campuses, then small cities. Markers more than 75° from the view centre (past the globe horizon) are hidden.
+- **Unmapped companies:** the off-map notice is a button ("146 aren’t on the map yet. Show them") that turns on the `unmapped` filter (`?unmapped=1`) and opens the list; the filter shows as a removable "Not on the map" chip.
+- **Trust:** the detail panel lists sources by domain; detail and company page end with a quiet "Suggest a fix" link (prefilled GitHub issue); About links "Add a company".
+- **Tokens and rhythm:** `--ink-3` is `#7A8E97` (4.5:1 on `--surface`). Spacing sits on a 4px grid. Chrome text (chips, counts, buttons, links) uses 500, emphasis 600; the wordmark, display headline and company names keep their v2 weights. Mobile tap targets are 44px (chips and text buttons get an invisible hit area).
+
 > **v3 "City lights" (below, first) supersedes v2 wherever they conflict.** v2 still defines the panel, list rows, filters, detail view, mobile layout and company page.
 
 ## v3 — City lights
