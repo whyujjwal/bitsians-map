@@ -15,7 +15,7 @@ export interface Prepared extends Company {
   hiring: boolean;
   /** Open roles read from the company's job board; null when no board is known or the data is stale. */
   roles: number | null;
-  /** Careers link, or the job board when there is no careers link. */
+  /** The job board while its roles are listed (the button names it), else the careers link. */
   jobsUrl: string;
   kind: TileKind;
   large: boolean;         // large map tile (Unicorn, Soonicorn, Minicorn, Public)
@@ -57,7 +57,7 @@ const BOARDS = jobsSummary.companies as Record<string, RoleBoard>;
 /** When the role lists were fetched. */
 export const ROLES_FETCHED_AT: string = jobsSummary.fetchedAt;
 /** Role counts older than this are not shown; the company falls back to its careers link. */
-const ROLES_MAX_AGE_DAYS = 14;
+export const ROLES_MAX_AGE_DAYS = 14;
 export const rolesFresh = (now = Date.now()) =>
   now - Date.parse(ROLES_FETCHED_AT) < ROLES_MAX_AGE_DAYS * 864e5;
 export const roleBoard = (id: string): RoleBoard | undefined => BOARDS[id];
@@ -69,6 +69,9 @@ export const isHiring = (c: Pick<Company, 'id' | 'careers'>) => {
   const n = rolesOf(c.id);
   return n == null ? !!c.careers : n > 0;
 };
+/** Where "See all on <board>" leads: the job board while its roles are listed, else the careers link. */
+export const jobsUrlOf = (c: Pick<Company, 'id' | 'careers'>) =>
+  (rolesOf(c.id) != null && BOARDS[c.id]?.board) || c.careers || BOARDS[c.id]?.board || '';
 export const tileKind = (c: Pick<Company, 'id' | 'careers' | 'status'>): TileKind =>
   isHiring(c) ? 'hiring' : isInactive(c.status) ? 'inactive' : 'active';
 
@@ -95,7 +98,7 @@ export function prepare(list: Company[]): Prepared[] {
       ...c,
       hiring: isHiring(c),
       roles: rolesOf(c.id),
-      jobsUrl: c.careers || BOARDS[c.id]?.board || '',
+      jobsUrl: jobsUrlOf(c),
       kind: tileKind(c),
       large: isLargeStage(c.stage),
       pos: c.lat == null || c.lng == null ? null : [c.lng, c.lat],

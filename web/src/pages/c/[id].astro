@@ -5,7 +5,7 @@ import TopBar from '../../components/TopBar.astro';
 import TrackControls from '../../components/TrackControls.svelte';
 import Roles from '../../components/Roles.svelte';
 import jobsData from '../../data/jobs.json';
-import { initials, isInactive, tileKind, isHiring, rolesOf, roleBoard, ATS_NAME, batchTag, fixUrl } from '../../lib/data';
+import { initials, isInactive, tileKind, isHiring, rolesOf, jobsUrlOf, ATS_NAME, ROLES_FETCHED_AT, ROLES_MAX_AGE_DAYS, batchTag, fixUrl } from '../../lib/data';
 import type { CompanyJobs } from '../../lib/jobs';
 
 export function getStaticPaths() {
@@ -16,7 +16,7 @@ const status = isInactive(c.status) ? c.status[0].toUpperCase() + c.status.slice
 const kind = tileKind(c);
 const roles = rolesOf(c.id);
 const jobs = roles != null ? ((jobsData as any).companies[c.id] as CompanyJobs | undefined) : undefined;
-const jobsUrl = c.careers || roleBoard(c.id)?.board || '';
+const jobsUrl = jobsUrlOf(c);
 const place = [c.city, c.country].filter(Boolean).join(', ');
 const hasPos = c.lat != null && c.lng != null;
 const host = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
@@ -61,11 +61,18 @@ const jsonLd = {
           {status && <span class="st">{status}</span>}
         </p>
         {jobs && (
-          <section aria-labelledby="rh" class="rsec">
+          <section aria-labelledby="rh" class="rsec" data-roles-fetched={ROLES_FETCHED_AT} data-roles-max-days={ROLES_MAX_AGE_DAYS}>
             <h2 id="rh">Open roles ({jobs.jobs.length})</h2>
             <Roles client:visible id={c.id} preload={jobs} />
           </section>
         )}
+        <script is:inline>
+          // This page is static, so its role list is from the last build. The map stops showing roles
+          // ROLES_MAX_AGE_DAYS after they were fetched; drop the list here at the same point.
+          for (const s of document.querySelectorAll('[data-roles-fetched]')) {
+            if (!(Date.now() - Date.parse(s.dataset.rolesFetched) < s.dataset.rolesMaxDays * 864e5)) s.remove();
+          }
+        </script>
         <TrackControls client:load id={c.id} name={c.name} careers={jobsUrl}
           quiet={!!jobs} cta={jobs ? `See all on ${ATS_NAME[jobs.ats] ?? 'their careers page'}` : 'View open roles'} />
         <p class="links">

@@ -208,6 +208,11 @@ def main() -> int:
             out[cid] = {"ats": b["ats"], "board": res["board"], "jobs": jobs}
             print(f"  {companies[cid]['name']}: {len(jobs)} roles", file=sys.stderr)
 
+    if known and not out:
+        # Usually no network. Writing now would wipe every role list and stamp it as fresh.
+        print(f"Could not read any of the {len(known)} boards; {OUT.relative_to(ROOT)} was left unchanged.", file=sys.stderr)
+        return 1
+
     fetched = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     OUT.write_text(json.dumps({"fetchedAt": fetched, "companies": out}, ensure_ascii=False, separators=(",", ":")) + "\n")
     summary = {cid: {"ats": v["ats"], "board": v["board"], "n": len(v["jobs"])} for cid, v in out.items()}

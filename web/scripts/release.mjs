@@ -69,6 +69,16 @@ else {
   console.log(`  ${site}`);
   if (site !== PROD_URL) warnings.push(`SITE_URL differs from the known production URL ${PROD_URL}.`);
 }
+
+// Open roles are baked into the build, and the site stops showing them 14 days after the fetch.
+step('Open roles');
+const jobsFile = 'src/data/jobs-summary.json';
+if (existsSync(jobsFile)) {
+  const fetchedAt = JSON.parse(readFileSync(jobsFile, 'utf8')).fetchedAt;
+  const days = Math.floor((Date.now() - Date.parse(fetchedAt)) / 864e5);
+  if (days < 7) console.log(`  fetched ${fetchedAt} (${days} days ago)`);
+  else warnings.push(`open roles were fetched ${Number.isNaN(days) ? 'at an unknown time' : `${days} days ago`} and disappear from the site 14 days after the fetch. Refresh first: python3 -I scripts/fetch_jobs.py from the repo root, then commit.`);
+}
 stopIfProblems();
 
 // 4. Build -----------------------------------------------------------------------------------
