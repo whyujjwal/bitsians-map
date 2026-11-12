@@ -1,15 +1,15 @@
 {
- "fetchedAt": "2026-11-09T19:39:04Z",
+ "fetchedAt": "2026-11-12T17:08:03Z",
  "companies": {
   "alphasense": {
    "ats": "greenhouse",
    "board": "https://job-boards.greenhouse.io/alphasense",
-   "n": 195
+   "n": 187
   },
   "atob": {
    "ats": "ashby",
    "board": "https://jobs.ashbyhq.com/atob",
-   "n": 8
+   "n": 7
   },
   "eltropy": {
    "ats": "greenhouse",
@@ -39,7 +39,7 @@
   "zenoti": {
    "ats": "greenhouse",
    "board": "https://job-boards.greenhouse.io/zenoti",
-   "n": 58
+   "n": 54
   }
  }
 }
