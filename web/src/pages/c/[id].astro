@@ -3,7 +3,10 @@ import Base from '../../layouts/Base.astro';
 import raw from '../../data/companies.json';
 import TopBar from '../../components/TopBar.astro';
 import TrackControls from '../../components/TrackControls.svelte';
-import { initials, isInactive, tileKind, batchTag, fixUrl } from '../../lib/data';
+import Roles from '../../components/Roles.svelte';
+import jobsData from '../../data/jobs.json';
+import { initials, isInactive, tileKind, isHiring, rolesOf, jobsUrlOf, ATS_NAME, ROLES_FETCHED_AT, ROLES_MAX_AGE_DAYS, batchTag, fixUrl } from '../../lib/data';
+import type { CompanyJobs } from '../../lib/jobs';
 
 export function getStaticPaths() {
   return (raw as any[]).map((c) => ({ params: { id: c.id }, props: { c } }));
@@ -11,6 +14,9 @@ export function getStaticPaths() {
 const { c } = Astro.props as { c: any };
 const status = isInactive(c.status) ? c.status[0].toUpperCase() + c.status.slice(1) : '';
 const kind = tileKind(c);
+const roles = rolesOf(c.id);
+const jobs = roles != null ? ((jobsData as any).companies[c.id] as CompanyJobs | undefined) : undefined;
+const jobsUrl = jobsUrlOf(c);
 const place = [c.city, c.country].filter(Boolean).join(', ');
 const hasPos = c.lat != null && c.lng != null;
 const host = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
@@ -20,7 +26,7 @@ const description = (
   `${c.name}${c.oneLine ? ': ' + c.oneLine.replace(/\.$/, '') : ''}. ` +
   [c.sector, c.stage, place].filter(Boolean).join(', ') + '.' +
   (founderNames ? ` Founded by BITS Pilani alumni ${founderNames}.` : '') +
-  (c.careers ? ' Hiring.' : '')
+  (roles ? ` Hiring: ${roles} open ${roles === 1 ? 'role' : 'roles'}.` : isHiring(c) ? ' Hiring.' : '')
 ).slice(0, 300);
 const sameAs = [c.website].filter(Boolean);
 const jsonLd = {
@@ -54,7 +60,21 @@ const jsonLd = {
           {c.founded && <span>Founded {c.founded}</span>}
           {status && <span class="st">{status}</span>}
         </p>
-        <TrackControls client:load id={c.id} name={c.name} careers={c.careers} />
+        {jobs && (
+          <section aria-labelledby="rh" class="rsec" data-roles-fetched={ROLES_FETCHED_AT} data-roles-max-days={ROLES_MAX_AGE_DAYS}>
+            <h2 id="rh">Open roles ({jobs.jobs.length})</h2>
+            <Roles client:visible id={c.id} preload={jobs} />
+          </section>
+        )}
+        <script is:inline>
+          // This page is static, so its role list is from the last build. The map stops showing roles
+          // ROLES_MAX_AGE_DAYS after they were fetched; drop the list here at the same point.
+          for (const s of document.querySelectorAll('[data-roles-fetched]')) {
+            if (!(Date.now() - Date.parse(s.dataset.rolesFetched) < s.dataset.rolesMaxDays * 864e5)) s.remove();
+          }
+        </script>
+        <TrackControls client:load id={c.id} name={c.name} careers={jobsUrl}
+          quiet={!!jobs} cta={jobs ? `See all on ${ATS_NAME[jobs.ats] ?? 'their careers page'}` : 'View open roles'} />
         <p class="links">
           {c.website && <a href={c.website} target="_blank" rel="noopener noreferrer">Website <span class="sr">({host(c.website)})</span></a>}
           {hasPos && <a href={`/?c=${encodeURIComponent(c.id)}`}>See it on the map</a>}

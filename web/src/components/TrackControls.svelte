@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { tracker, isApplied, shortDate, STATUS_LABEL, APPLIED_STATUSES, type TrackStatus } from '../lib/tracker.svelte';
-  let { id, name, careers = '' }: { id: string; name: string; careers?: string } = $props();
+  // `cta` renames the careers link; `quiet` makes it secondary when roles are already listed above it.
+  let { id, name, careers = '', cta = 'View open roles', quiet = false }: { id: string; name: string; careers?: string; cta?: string; quiet?: boolean } = $props();
   onMount(() => tracker.init());
   const e = $derived(tracker.entries[id]);
   const applied = $derived(isApplied(e?.status));
@@ -11,14 +12,14 @@
 </script>
 
 {#if careers}
-  <a class="cta" href={careers} target="_blank" rel="noopener noreferrer" onclick={() => { if (!applied) tracker.pending = id; }}>View open roles</a>
+  <a class="cta" class:quiet href={careers} target="_blank" rel="noopener noreferrer" onclick={() => { if (!applied) { tracker.pending = id; tracker.pendingRole = ''; } }}>{cta}</a>
 {/if}
 <div class="track" aria-label="Application tracker for {name}" role="group">
   {#if tracker.pending === id && !applied}
     <p class="tprompt">
-      Applied to {name}?
+      Applied to {tracker.pendingRole ? `${tracker.pendingRole} at ${name}` : name}?
       <button class="tlink" onclick={() => tracker.markApplied(id)}>Mark applied</button>
-      <button class="tlink quiet" onclick={() => (tracker.pending = '')}>Not yet</button>
+      <button class="tlink quiet" onclick={() => { tracker.pending = ''; tracker.pendingRole = ''; }}>Not yet</button>
     </p>
   {/if}
 
