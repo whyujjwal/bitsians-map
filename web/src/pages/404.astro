@@ -1,17 +1,20 @@
 ---
 import Base from '../layouts/Base.astro';
 import TopBar from '../components/TopBar.astro';
+import '../styles/site.css';
 ---
 <Base title="Page not found | BITSians Startup Map" description="This page does not exist." noindex>
-  <div class="cpage">
+  <div class="site">
     <TopBar />
-    <main class="cwrap">
-      <div class="dbody">
-        <h1 class="dtitle">Page not found</h1>
-        <p class="done">That company or page does not exist. It may have moved, or the link may be mistyped.</p>
-        <a class="cta" href="/">Open the map</a>
-      </div>
-    </main>
-    <footer class="foot">Independent community project, not affiliated with BITS Pilani.</footer>
+    <div class="fwrap">
+      <main class="fstage cp">
+        <div class="cp-msg">
+          <h1>Page not found</h1>
+          <p class="cp-one">That company or page does not exist. It may have moved, or the link may be mistyped.</p>
+          <a class="cta" href="/">See open roles</a>
+        </div>
+      </main>
+      <footer class="foot cp-foot">Independent community project, not affiliated with BITS Pilani.</footer>
+    </div>
   </div>
 </Base>

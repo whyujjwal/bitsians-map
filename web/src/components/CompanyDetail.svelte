@@ -2,8 +2,12 @@
   import Tile from './Tile.svelte';
   import TrackControls from './TrackControls.svelte';
   import Roles from './Roles.svelte';
-  import { isInactive, batchTag, sourceHost, fixUrl, roleBoard, ATS_NAME, type Prepared } from '../lib/data';
-  let { c, onback, backref = $bindable() }: { c: Prepared; onback: () => void; backref?: HTMLButtonElement } = $props();
+  import { isInactive, batchTag, sourceHost, fixUrl, roleBoard, referralFormUrl, ATS_NAME, type Prepared } from '../lib/data';
+  // `backLabel` names where the back button returns to; `onmap` adds a "See it on the map" link (front page).
+  let { c, onback, backref = $bindable(), backLabel = 'All companies', onmap = false }: {
+    c: Prepared; onback: () => void; backref?: HTMLButtonElement; backLabel?: string; onmap?: boolean;
+  } = $props();
+  const referral = $derived(referralFormUrl(c.name));
   const place = $derived([c.city, c.country].filter(Boolean).join(', '));
   const status = $derived(isInactive(c.status) ? c.status[0].toUpperCase() + c.status.slice(1) : '');
   const facts = $derived(([
@@ -34,7 +38,7 @@
 <div class="dhead">
   <button class="back" bind:this={backref} onclick={onback}>
     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    All companies
+    {backLabel}
   </button>
   <button class="x" aria-label="Close" onclick={onback}>
     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -71,6 +75,9 @@
       <TrackControls id={c.id} name={c.name} careers={c.jobsUrl}
         quiet={c.roles != null} cta={c.roles != null ? `See all on ${ATS_NAME[roleBoard(c.id)?.ats ?? ''] ?? 'their careers page'}` : 'View open roles'} />
     </div>
+    {#if referral && c.hiring}
+      <p class="refer">Want a BITSian here to refer you? Referrals aren't open yet. <a href={referral} target="_blank" rel="noopener noreferrer">Join the waitlist</a></p>
+    {/if}
   </section>
 
   {#if c.founders.length}
@@ -100,6 +107,7 @@
 
   <p class="dfoot">
     <a href={'/c/' + c.id}>Open full page</a>
+    {#if onmap && c.pos}<a href={'/map?c=' + encodeURIComponent(c.id)}>See it on the map</a>{/if}
     <a class="fix" href={fixUrl(c)} target="_blank" rel="noopener noreferrer">Suggest a fix</a>
   </p>
 </div>

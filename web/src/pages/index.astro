@@ -1,12 +1,29 @@
 ---
-import App from '../components/App.svelte';
 import Base from '../layouts/Base.astro';
-// App imports its own slim dataset (src/data/index-data.json, written by
-// scripts/export_web_data.py), so no data is serialized into island props here.
+import Front from '../components/Front.svelte';
+import '../styles/site.css';
+import raw from '../data/index-data.json';
+import jobsData from '../data/jobs.json';
+import { rolesOf, ROLES_FETCHED_AT, ROLES_MAX_AGE_DAYS } from '../lib/data';
+import type { CompanyJobs, Job } from '../lib/jobs';
+
+// Front imports its own slim dataset (src/data/index-data.json, written by
+// scripts/export_web_data.py). Only the first few roles per company are passed as props, so the
+// role list is in the HTML; Front loads the full lists (their own chunk) once it is running.
+const preview: Record<string, Job[]> = {};
+for (const [id, v] of Object.entries((jobsData as any).companies as Record<string, CompanyJobs>)) {
+  if (rolesOf(id)) preview[id] = v.jobs.slice(0, 4);
+}
+const companies = (raw as unknown[]).length;
 ---
 <Base
-  title="BITSians Startup Map"
-  description="A map and directory of companies founded by BITS Pilani alumni across Pilani, Goa, Hyderabad and Dubai. Find founders and open roles."
+  title="BITSians Startup Map: open roles at companies founded by BITSians"
+  description={`Find open roles at the ${companies} companies founded by BITS Pilani alumni from Pilani, Goa, Hyderabad and Dubai. Search by role, city, sector, campus and batch, and keep track of where you applied.`}
 >
-  <App client:load />
+  <!-- This page is static, so its role list is from the last build. Hide it before first paint
+       once the roles are too old to show; Front then renders without them. -->
+  <script slot="head" is:inline define:vars={{ fetchedAt: ROLES_FETCHED_AT, maxDays: ROLES_MAX_AGE_DAYS }}>
+    if (!(Date.now() - Date.parse(fetchedAt) < maxDays * 864e5)) document.documentElement.setAttribute('data-roles-stale', '');
+  </script>
+  <Front client:load {preview} />
 </Base>

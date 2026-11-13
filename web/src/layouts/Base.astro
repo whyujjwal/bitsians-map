@@ -28,6 +28,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />}
+    <slot name="head" />
   </head>
   <body>
     <slot />

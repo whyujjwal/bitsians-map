@@ -1,6 +1,6 @@
 # BITSians Startup Map
 
-A map and directory of companies founded by BITS Pilani alumni (Pilani, Goa, Hyderabad and Dubai campuses): who founded them, where they are, and who's hiring.
+Open roles at the companies founded by BITS Pilani alumni (Pilani, Goa, Hyderabad and Dubai campuses), with a directory of who founded them, where they are, and who's hiring. The front page lists roles and companies; the map is at `/map`.
 
 Live: https://bitsians-map.whyujjwalraj.workers.dev
 
@@ -35,6 +35,13 @@ pnpm dev               # http://localhost:4321
 pnpm run deploy:dry-run   # every release check and the build, nothing uploaded
 pnpm run deploy        # guarded release from main to Cloudflare (needs `wrangler login`)
 ```
+
+Pages: `/` (roles, companies, saved and applied lists), `/map` (the map), `/c/<id>` (one page per company, the link founders share).
+
+Two optional sign-up links can be switched on in `web/.env` (see `.env.example`). While they are unset the site shows nothing about them:
+
+- `PUBLIC_REFERRAL_FORM_URL`: a "Join the waitlist" link under the roles of every hiring company, for counting how many students want a referral. `{company}` in the URL is replaced with the company name.
+- `PUBLIC_ALUMNI_FORM_URL`: a "Would you refer a junior? Tell us" link in the front page footer.
 
 How releases are checked, verified and rolled back: [RELEASING.md](RELEASING.md).
 
