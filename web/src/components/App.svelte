@@ -7,7 +7,7 @@
   import CheckList from './CheckList.svelte';
   import {
     prepare, applyFilters, emptyFilters, readUrl, writeUrl, sortItems, sortSectors, sortStages,
-    stageLabel, SORTS, fixUrl,
+    stageLabel, decadeLabel, SORTS, fixUrl,
     type Company, type Filters, type View, type Prepared, type Sort,
   } from '../lib/data';
 
@@ -78,7 +78,7 @@
   const hiringCount = $derived(filtered.reduce((n, c) => n + (c.hiring ? 1 : 0), 0));
   const offMap = $derived(filtered.reduce((n, c) => n + (c.pos ? 0 : 1), 0));
   const selected = $derived(selectedId ? byId.get(selectedId) : undefined);
-  const activeCount = $derived(f.sectors.length + f.stages.length + f.campuses.length + f.cities.length + f.continents.length + f.countries.length + f.states.length);
+  const activeCount = $derived(f.sectors.length + f.stages.length + f.campuses.length + f.cities.length + f.continents.length + f.countries.length + f.states.length + f.batches.length);
   // The map refits to the results whenever the place filters change.
   const fitKey = $derived([f.continents, f.countries, f.states, f.cities, f.campuses].map((a) => a.join(',')).join('|'));
   const anyFilter = $derived(activeCount > 0 || f.hiring || f.unmapped || !!f.track || f.q !== '');
@@ -178,6 +178,10 @@
 <div class="app" data-view={view} class:listclosed={!listOpen}>
   <nav class="rail" aria-label="Main">
     <a class="rmark" href="/" aria-label="BITSians Startup Map, home">B</a>
+    <a class="rbtn" href="/">
+      <span class="ric"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18" /></svg></span>
+      Roles
+    </a>
     <button class="rbtn" aria-pressed={listOpen && !f.track} onclick={discover}>
       <span class="ric"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.5 8.5-2 5-5 2 2-5z" /></svg></span>
       Discover
@@ -256,6 +260,9 @@
         {/if}
         {#if f.unmapped}
           <button class="chip on" aria-pressed="true" onclick={() => (f.unmapped = false)}>Not on the map{@render xmark()}</button>
+        {/if}
+        {#if f.batches.length}
+          <button class="chip on" aria-pressed="true" onclick={() => (f.batches = [])}>Batch {f.batches.map(decadeLabel).join(', ')}{@render xmark()}</button>
         {/if}
         <span class="desk chips">
           <FilterChip label="Sector" options={sectors} selected={f.sectors} open={openKey === 'sector'} ontoggleopen={() => setOpen('sector')} onclose={() => (openKey = '')} onpick={toggle('sectors')} />

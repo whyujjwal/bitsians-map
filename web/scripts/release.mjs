@@ -88,7 +88,7 @@ if (build.status !== 0) { fail('astro build failed.'); stopIfProblems(); }
 
 // 5. Check the build ---------------------------------------------------------------------------
 step('Check the built site');
-const need = ['index.html', '404.html', 'sitemap-index.xml', 'maplibre/maplibre-gl-worker.mjs', '_headers'];
+const need = ['index.html', 'map/index.html', '404.html', 'sitemap-index.xml', 'maplibre/maplibre-gl-worker.mjs', '_headers'];
 for (const f of need) if (!existsSync(join(OUT, f))) fail(`missing ${f} in the build.`);
 const companies = JSON.parse(readFileSync('src/data/companies.json', 'utf8'));
 const pages = existsSync(join(OUT, 'c')) ? readdirSync(join(OUT, 'c')).filter((d) => existsSync(join(OUT, 'c', d, 'index.html'))).length : 0;

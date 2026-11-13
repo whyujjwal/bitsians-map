@@ -1,10 +1,10 @@
 <script lang="ts">
   import { initials, type TileKind } from '../lib/data';
   let { name, kind, size = 'sm', selected = false, logo = '', logoDark = false }: {
-    name: string; kind: TileKind; size?: 'sm' | 'lg'; selected?: boolean; logo?: string; logoDark?: boolean;
+    name: string; kind: TileKind; size?: 'xs' | 'sm' | 'lg'; selected?: boolean; logo?: string; logoDark?: boolean;
   } = $props();
   let bad = $state(false);
-  const px = $derived(size === 'lg' ? 48 : 36);
+  const px = $derived(size === 'lg' ? 48 : size === 'xs' ? 24 : 36);
   const inner = $derived(Math.round(px * 0.78));
 </script>
 

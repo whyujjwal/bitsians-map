@@ -24,6 +24,7 @@ export interface Prepared extends Company {
   nameKey: string;
   continent: string;      // '' when the country is unknown
   state: string;          // state or province, '' when not in the lookup
+  decades: string[];      // founders' batch decades, e.g. ['2000', '2010']; empty when no batch is known
 }
 
 // ---- Stages ----
@@ -48,6 +49,11 @@ export function sortStages(entries: [string, number][]): [string, number][] {
 export function sortSectors(entries: [string, number][]): [string, number][] {
   return [...entries].sort((a, b) => (a[0] === 'Other' ? 1 : 0) - (b[0] === 'Other' ? 1 : 0) || b[1] - a[1] || a[0].localeCompare(b[0]));
 }
+
+// ---- Batches ----
+/** Decade of a batch year: "2008" gives "2000"; "" when the year isn't known. */
+export const decadeOf = (year: string) => (/^\d{4}$/.test(year) ? year.slice(0, 3) + '0' : '');
+export const decadeLabel = (d: string) => `${d}s`;
 
 export const isInactive = (status: string) => status.startsWith('acquired') || status === 'closed';
 
@@ -106,6 +112,7 @@ export function prepare(list: Company[]): Prepared[] {
       nameKey: c.name.toLowerCase(),
       continent: continentOf(c.country),
       state: stateOf(c.country, c.city),
+      decades: [...new Set(c.founders.map((f) => decadeOf(f.gradYear)).filter(Boolean))].sort(),
       hay: [c.name, c.founders.map((f) => f.name).join(' '), c.sector, c.city, stateOf(c.country, c.city), c.country, c.campuses.join(' '), c.oneLine].join(' ').toLowerCase(),
     }))
     .sort((a, b) => stageWeight(a.stage) - stageWeight(b.stage) || a.name.localeCompare(b.name));
@@ -114,18 +121,20 @@ export function prepare(list: Company[]): Prepared[] {
 export interface Filters {
   q: string; sectors: string[]; stages: string[]; campuses: string[]; cities: string[]; hiring: boolean;
   continents: string[]; countries: string[]; states: string[];
+  /** Batch decades ("2010"): companies with a founder from one of them. */
+  batches: string[];
   unmapped: boolean;
   /** Application tracker view; applied in App (the tracker lives in localStorage). */
   track: '' | 'saved' | 'applied';
 }
 export const emptyFilters = (): Filters => ({
   q: '', sectors: [], stages: [], campuses: [], cities: [], hiring: false, unmapped: false, track: '',
-  continents: [], countries: [], states: [],
+  continents: [], countries: [], states: [], batches: [],
 });
 
 export function applyFilters(all: Prepared[], f: Filters): Prepared[] {
   const terms = f.q.toLowerCase().split(/\s+/).filter(Boolean);
-  const { sectors, stages, campuses, cities, hiring, unmapped, continents, countries, states } = f;
+  const { sectors, stages, campuses, cities, hiring, unmapped, continents, countries, states, batches } = f;
   const out: Prepared[] = [];
   outer: for (let i = 0; i < all.length; i++) {
     const c = all[i];
@@ -140,6 +149,11 @@ export function applyFilters(all: Prepared[], f: Filters): Prepared[] {
     if (campuses.length) {
       let ok = false;
       for (const k of campuses) if (c.campuses.includes(k)) { ok = true; break; }
+      if (!ok) continue;
+    }
+    if (batches.length) {
+      let ok = false;
+      for (const d of c.decades) if (batches.includes(d)) { ok = true; break; }
       if (!ok) continue;
     }
     for (let t = 0; t < terms.length; t++) if (!c.hay.includes(terms[t])) continue outer;
@@ -190,7 +204,7 @@ export function readUrl(search: string): UrlState {
   return {
     f: {
       q: p.get('q') ?? '', sectors: arr('sector'), stages: arr('stage'), campuses: arr('campus'),
-      cities: arr('city'), continents: arr('continent'), countries: arr('country'), states: arr('state'), hiring: p.get('hiring') === '1', unmapped: p.get('unmapped') === '1',
+      cities: arr('city'), continents: arr('continent'), countries: arr('country'), states: arr('state'), batches: arr('batch'), hiring: p.get('hiring') === '1', unmapped: p.get('unmapped') === '1',
       track: p.get('track') === 'saved' || p.get('track') === 'applied' ? (p.get('track') as 'saved' | 'applied') : '',
     },
     selected: p.get('c') ?? p.get('focus') ?? '',
@@ -198,7 +212,8 @@ export function readUrl(search: string): UrlState {
     sort: s === 'newest' || s === 'az' ? s : 'notable',
   };
 }
-export function writeUrl(f: Filters, view: View, selected: string, sort: Sort): string {
+/** The filters, selection and sort as query parameters (shared by the front page and the map). */
+export function filterParams(f: Filters, selected: string, sort: Sort): URLSearchParams {
   const p = new URLSearchParams();
   if (selected) p.set('c', selected);
   if (f.q) p.set('q', f.q);
@@ -209,14 +224,28 @@ export function writeUrl(f: Filters, view: View, selected: string, sort: Sort): 
   if (f.continents.length) p.set('continent', f.continents.join(','));
   if (f.countries.length) p.set('country', f.countries.join(','));
   if (f.states.length) p.set('state', f.states.join(','));
+  if (f.batches.length) p.set('batch', f.batches.join(','));
   if (f.hiring) p.set('hiring', '1');
   if (f.unmapped) p.set('unmapped', '1');
   if (f.track) p.set('track', f.track);
   if (sort !== 'notable') p.set('sort', sort);
+  return p;
+}
+export function writeUrl(f: Filters, view: View, selected: string, sort: Sort): string {
+  const p = filterParams(f, selected, sort);
   if (view === 'list') p.set('view', 'list');
   const s = p.toString();
   return location.pathname + (s ? '?' + s : '');
 }
+
+// ---- Optional sign-up forms (set in web/.env; nothing is shown while they are unset) ----
+const env = import.meta.env as Record<string, string | undefined>;
+const https = (u: string | undefined) => (u && /^https:\/\//.test(u) ? u : '');
+/** Waitlist for students who want a referral at a company. "{company}" in the URL becomes the company name. */
+export const referralFormUrl = (company: string) =>
+  https(env.PUBLIC_REFERRAL_FORM_URL).replace('{company}', encodeURIComponent(company));
+/** Form for alumni who would refer juniors. */
+export const ALUMNI_FORM_URL = https(env.PUBLIC_ALUMNI_FORM_URL);
 
 /** @deprecated kept so older map code keeps compiling; the redesign uses tile kinds. */
 export const sectorColor = (_s: string) => '#0a6c74';

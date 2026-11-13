@@ -1,9 +1,15 @@
 ---
+// Top bar for the static pages (company pages, 404). The front page and the map draw their own,
+// with search.
 ---
-<header class="top">
+<header class="sbar">
   <a class="brand" href="/" aria-label="BITSians Startup Map, home">
     <span class="logo" aria-hidden="true">B</span>
     <span class="wordmark">BITSians Startup Map</span>
   </a>
-  <a class="textbtn" href="/">Open the map</a>
+  <nav class="sbar-nav sbar-links" aria-label="Main">
+    <a class="tpill" href="/">Roles</a>
+    <a class="tpill" href="/?tab=companies">Companies</a>
+    <a class="tpill" href="/map">Map</a>
+  </nav>
 </header>

@@ -1,0 +1,276 @@
+/* v5 "Register": the front page and company pages. The map keeps its own layout (global.css).
+   Everything here sits under .site, so it never competes with the map's rules. */
+:root {
+  --chart-rest: #8A948F; /* founders who aren't hiring, in the batch chart (checked against --hire) */
+  --measure: 1240px;
+}
+[data-roles-stale] .needs-fresh { display: none; }
+
+.site { min-height: 100dvh; }
+
+/* ---------- top bar ---------- */
+.sbar {
+  position: sticky; z-index: 30; top: 8px; margin: 8px 8px 0; height: 56px;
+  display: flex; align-items: center; gap: 8px; padding: 0 8px;
+  background: color-mix(in oklab, var(--surface) 92%, transparent); backdrop-filter: blur(12px);
+  border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--float);
+}
+.sbar-nav { display: flex; align-items: center; gap: 4px; flex: none; }
+.sbar-links { margin-left: auto; }
+.site .sbar .tpill { display: inline-flex; text-decoration: none; }
+.sbar .tpill[aria-current="page"] { background: var(--surface-2); border-color: var(--line-2); }
+
+/* ---------- page column ---------- */
+.fwrap { container: fwrap / inline-size; max-width: var(--measure); margin: 0 auto; padding: 0 8px 32px; }
+
+/* ---------- hero ---------- */
+.hero { display: grid; gap: 24px; padding: 28px 8px 24px; }
+.hero h1 {
+  font-size: clamp(52px, 16.5cqw, 76px); line-height: .9; font-stretch: 62%; font-weight: 860;
+  letter-spacing: -.012em; text-wrap: balance;
+}
+.lede { margin-top: 16px; max-width: 42ch; font-size: clamp(17px, 4.6cqw, 20px); line-height: 1.45; color: var(--ink-2); }
+.lede button {
+  color: var(--ink); font-weight: 650; font-variant-numeric: tabular-nums;
+  text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; border-radius: 4px;
+}
+.lede button:hover { color: var(--peacock); }
+
+/* batch chart */
+.bchart { width: 100%; max-width: 544px; padding: 16px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 22px; }
+.bc-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+.bc-head h2 { font-size: 15px; line-height: 1.3; font-weight: 650; }
+.bc-legend { display: flex; gap: 12px; font-size: 12px; font-weight: 500; color: var(--ink-2); }
+.bc-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.sq { display: block; flex: none; width: 8px; height: 8px; border-radius: 1.5px; background: var(--chart-rest); font-style: normal; }
+.sq.hire { background: var(--hire); }
+.bc-read {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; min-height: 44px; margin: 8px 0 12px;
+  font-size: 13px; line-height: 1.4; color: var(--ink-2);
+}
+.bc-who b { font-size: 14px; font-weight: 650; color: var(--ink); }
+.bc-co {
+  display: inline-flex; align-items: center; gap: 8px; margin-left: auto; border-radius: 4px;
+  font-size: 14px; font-weight: 600; color: var(--peacock); text-decoration: underline; text-underline-offset: 2px;
+}
+.bc-plot { container-type: inline-size; display: flex; align-items: flex-end; cursor: pointer; touch-action: manipulation; }
+.bc-col {
+  --u: calc(100cqw / var(--cols));
+  flex: none; width: var(--u); height: calc(var(--u) * var(--rows));
+  display: flex; flex-direction: column-reverse; align-items: center; transform-origin: bottom; transition: opacity .15s;
+}
+.bc-col.dim { opacity: .28; }
+.bc-col .sq { width: calc(var(--u) * .75); height: calc(var(--u) * .75); margin: calc(var(--u) * .125) 0; }
+.bc-col .sq.on { outline: 2px solid var(--ink); outline-offset: 1px; }
+@media (prefers-reduced-motion: no-preference) {
+  .bc-col { animation: bc-grow .5s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i) * 9ms); }
+}
+@keyframes bc-grow { from { transform: scaleY(0); } }
+.bc-axis { display: flex; margin-top: 4px; border-top: 1px solid var(--line-2); }
+.bc-axis button {
+  position: relative; flex: 1 1 0; min-width: 0; padding: 6px 0 6px 4px; border-left: 1px solid var(--line-2); border-radius: 0 0 6px 6px;
+  font-size: 12px; line-height: 1; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap;
+  transition: background-color .12s, color .12s;
+}
+.bc-axis button::after { content: ""; position: absolute; inset: 0 0 -12px; }
+.bc-axis button:hover { background: var(--surface-2); color: var(--ink); }
+.bc-axis button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+/* ---------- stage: the white sheet that holds the lists ---------- */
+.fstage { background: var(--surface); border: 1px solid var(--line-2); border-radius: 22px; scroll-margin-top: 76px; }
+main.fstage:not(.cp) { min-height: 70dvh; }
+.ftabs { display: flex; gap: 2px; padding: 4px 8px 0; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.ftabs::-webkit-scrollbar { display: none; }
+.ftab {
+  display: inline-flex; align-items: center; gap: 6px; flex: none; height: 52px; padding: 0 12px;
+  font-size: 17px; line-height: 1; font-stretch: 85%; font-weight: 650; color: var(--ink-2); white-space: nowrap; transition: color .12s;
+}
+.ftab .n { font-size: 13px; font-stretch: 100%; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+.ftab svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ftab:hover { color: var(--ink); }
+.ftab[aria-current="true"] { color: var(--ink); box-shadow: inset 0 -3px 0 var(--ink); }
+.ftab:focus-visible { outline-offset: -3px; border-radius: 8px; }
+.ftab.push { margin-left: auto; }
+.site .chipbar { padding: 12px 16px 8px; }
+.fmeta {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px;
+  padding: 4px 16px 12px; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.4;
+}
+.fsum { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.fmeta-r { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; font-weight: 500; }
+.fnote { padding: 12px 16px 0; }
+.site .empty { padding: 40px 16px; }
+.empty-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn.ghost { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-2); }
+
+/* roles, grouped by company */
+.rgroup { padding: 8px 8px 12px; border-bottom: 1px solid var(--line); }
+.rg-head { display: flex; align-items: center; gap: 12px; }
+.rg-co {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 12px; flex: 1; min-width: 0;
+  padding: 8px; border-radius: 14px; transition: background-color .12s;
+}
+.rg-co:hover { background: var(--surface-2); }
+.rg-id { display: grid; gap: 2px; min-width: 0; }
+.rg-name { font-size: 20px; line-height: 1.1; font-stretch: 80%; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rg-by { font-size: 13px; line-height: 1.4; font-weight: 500; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rg-by .batch { margin-left: 6px; }
+.rg-n {
+  flex: none; margin-right: 8px; padding: 2px 10px; border-radius: 999px; background: var(--hire-soft); color: var(--hire-ink);
+  font-size: 12px; line-height: 16px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.rrows { margin: 0 8px; }
+.rrows li { border-top: 1px solid var(--line); }
+.rrow {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; padding: 10px 8px; margin: 0 -8px; border-radius: 10px;
+  color: var(--ink); text-decoration: none; transition: background-color .12s;
+}
+.rrow:hover { background: var(--surface-2); }
+.rrow:hover .rr-title { text-decoration: underline; text-underline-offset: 2px; }
+.rr-title { flex: 1 0 100%; font-size: 15px; line-height: 1.35; font-weight: 600; }
+.rr-team, .rr-loc { font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.rrows .tprompt { margin: 0 0 10px; }
+.rg-more { margin: 4px 8px 0; min-height: 36px; }
+
+/* hiring companies whose roles can't be listed */
+.more { padding: 24px 16px 28px; }
+.more h2 { font-size: 20px; line-height: 1.15; font-stretch: 80%; font-weight: 700; }
+.more p { margin-top: 4px; max-width: 60ch; font-size: 14px; color: var(--ink-2); }
+.morelist { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.mchip {
+  display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 6px; border: 1px solid var(--line); border-radius: 999px;
+  font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; transition: background-color .12s, border-color .12s;
+}
+.mchip:hover { border-color: var(--line-2); background: var(--surface-2); }
+.tile.t-xs { width: 28px; height: 28px; border-radius: 50%; font-size: 10px; }
+
+/* company register */
+.clines { padding: 4px 8px 16px; }
+.cline {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px 12px; padding: 12px 8px; border-radius: 14px;
+  color: var(--ink); text-decoration: none; transition: background-color .12s;
+}
+.cline:hover, .cline:focus-visible { background: var(--surface-2); }
+.cline.selected { background: color-mix(in oklab, var(--peacock) 9%, transparent); }
+.cline:focus-visible { outline-offset: -2px; }
+.cl-main { display: grid; gap: 2px; min-width: 0; }
+.cl-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.cl-name { min-width: 0; font-size: 17px; line-height: 1.2; font-stretch: 85%; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cl-one { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
+.cl-note { font-weight: 500; color: var(--hire-ink); }
+.cl-meta { grid-column: 2; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 12px; font-size: 13px; line-height: 1.4; font-weight: 500; color: var(--ink-3); }
+.cl-by { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; min-width: 0; color: var(--ink-2); }
+.cl-kind { display: none; }
+.cl-place { margin-left: auto; }
+
+/* company opened beside the list (mobile: a sheet from the bottom) */
+.fscrim { position: fixed; inset: 0; z-index: 39; background: rgb(22 32 27 / .3); cursor: default; }
+.fdetail {
+  position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; max-height: 86dvh; display: flex; flex-direction: column;
+  background: var(--surface); border-radius: 22px 22px 0 0; box-shadow: var(--float); overflow: hidden;
+  animation: sheet-up .22s cubic-bezier(.2, .8, .2, 1);
+}
+.refer { font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.refer a { font-weight: 600; }
+
+/* ---------- footer ---------- */
+.ffoot { display: grid; gap: 28px; padding: 36px 8px 8px; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+.ffoot h2 { margin-bottom: 6px; font-size: 20px; line-height: 1.15; font-stretch: 80%; font-weight: 700; color: var(--ink); }
+.ffoot p { max-width: 46ch; }
+.flinks { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-top: 10px; font-weight: 600; }
+.flinks button { color: var(--peacock); text-decoration: underline; text-underline-offset: 2px; border-radius: 4px; }
+.site .foot { padding: 28px 8px 0; text-align: left; color: var(--ink-2); }
+
+/* ---------- company page ---------- */
+.fstage.cp { max-width: 980px; margin: 20px auto 0; }
+.cp > .banner:first-child { border-radius: 21px 21px 0 0; }
+.cp-head { display: flex; align-items: center; gap: 16px; padding: 24px 16px 0; }
+.cp-title { display: grid; gap: 6px; min-width: 0; }
+.cp-title h1 { font-size: clamp(40px, 11cqw, 72px); line-height: .92; font-stretch: 62%; font-weight: 860; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.cp-one { max-width: 60ch; padding: 16px 16px 0; font-size: clamp(17px, 4.4cqw, 20px); line-height: 1.45; color: var(--ink); }
+.cp .facts { padding: 16px 16px 0; }
+.cp-cols { display: grid; gap: 32px; padding: 28px 16px 8px; }
+.cp h2 { margin-bottom: 8px; font-size: 20px; line-height: 1.15; font-stretch: 80%; font-weight: 700; }
+.cp section + section, .cp section + .refer { margin-top: 28px; }
+.cp .rsec + section h2 { font-size: 15px; font-stretch: 100%; font-weight: 600; }
+.cp .founders li { flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.cp .founders li:last-child { border-bottom: 0; }
+.cp .founders .batch { padding: 2px 10px; border: 1px solid var(--line-2); border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.cp-share p { font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.cp-sharebtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.cp-sharebtns .tbtn { text-decoration: none; }
+.cp .dfoot { margin: 24px 16px 20px; }
+.cp-more { max-width: 980px; margin: 0 auto; padding: 24px 8px 0; }
+.site .cp-foot { max-width: 980px; margin: 0 auto; }
+.cp-more h2 { margin-bottom: 12px; font-size: 20px; line-height: 1.15; font-stretch: 80%; font-weight: 700; }
+.cp-more ul { display: flex; flex-wrap: wrap; gap: 8px; }
+.cp-more .chip { text-decoration: none; }
+.cp-msg { display: grid; justify-items: start; gap: 16px; padding: 32px 16px 36px; }
+.cp-msg h1 { font-size: clamp(40px, 11cqw, 72px); line-height: .92; font-stretch: 62%; font-weight: 860; }
+.cp-msg .cp-one { padding: 0; }
+
+/* ---------- wider layouts (by the width of the page column, so they follow the open company) ---------- */
+@container fwrap (min-width: 700px) {
+  .hero { padding: 40px 12px 32px; }
+  .hero h1 { font-size: clamp(76px, 11cqw, 104px); }
+  .lede { font-size: 20px; }
+  .rgroup { padding: 12px 12px 16px; }
+  .rrows { margin: 0 8px 0 72px; }
+  .rrow { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+  .rr-title { flex: none; }
+  .rr-loc { text-align: right; }
+  .rg-more { margin-left: 72px; }
+  .more { padding: 28px 24px 32px; }
+  .clines { padding: 8px 12px 20px; }
+  .cp-head { gap: 24px; padding: 32px 32px 0; }
+  .cp-one, .cp .facts { padding-inline: 32px; }
+  .cp-cols { padding: 32px 32px 8px; }
+  .cp .dfoot { margin: 28px 32px 24px; }
+  .cp-msg { padding: 48px 32px; }
+}
+@container fwrap (min-width: 860px) {
+  .cline { grid-template-columns: 44px minmax(0, 2.2fr) minmax(0, 1.3fr) minmax(0, .9fr) minmax(0, .7fr); align-items: center; gap: 16px; }
+  .cl-one { -webkit-line-clamp: 1; }
+  .cl-meta { display: contents; }
+  .cl-by { display: grid; gap: 2px; font-size: 13px; line-height: 1.4; font-weight: 500; }
+  .cl-names { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cl-kind { display: grid; gap: 2px; font-size: 13px; line-height: 1.4; font-weight: 500; color: var(--ink-2); }
+  .cl-stage { color: var(--ink-3); }
+  .cl-place { margin-left: 0; font-size: 13px; font-weight: 500; color: var(--ink-2); text-align: right; }
+  /* Headline beside the chart. "Your seniors" is about 4.1em wide, so the size follows the column. */
+  .hero { grid-template-columns: minmax(0, 1fr) 440px; align-items: end; gap: 32px; }
+  .hero h1 { font-size: clamp(64px, 8.4cqw, 104px); }
+  .ffoot { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; padding: 48px 12px 8px; }
+  .cp-cols { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 48px; }
+}
+@container fwrap (min-width: 1120px) {
+  .hero { grid-template-columns: minmax(0, 1fr) 544px; padding: 48px 12px 36px; }
+  .hero h1 { font-size: clamp(104px, 9.6cqw, 124px); }
+}
+
+@media (min-width: 960px) {
+  .sbar { top: 12px; margin: 12px 12px 0; height: 60px; padding: 0 12px 0 16px; gap: 16px; border-radius: 20px; }
+  .sbar .search { max-width: 480px; }
+  .sbar-nav { margin-left: auto; gap: 8px; }
+  .site .sbar .tpill { padding: 0 14px; }
+  .fwrap { padding: 0 12px 40px; }
+  .fstage { border-radius: 28px; scroll-margin-top: 84px; }
+  .cp > .banner:first-child { border-radius: 27px 27px 0 0; }
+  .fscrim { display: none; }
+  .fdetail {
+    top: 84px; right: 12px; bottom: 12px; left: auto; width: 440px; max-height: none; border-radius: 22px;
+    border: 1px solid var(--line); animation: card-in .18s ease-out;
+  }
+}
+/* On wide screens the list makes room for the open company instead of sitting under it. */
+@media (min-width: 1280px) {
+  .site.has-detail .fwrap { max-width: none; margin: 0 464px 0 0; }
+}
+@media (max-width: 959px) {
+  .sbar .brand .wordmark { display: none; }
+  .ftab { font-size: 16px; padding: 0 10px; }
+}
+/* Phones: Saved and Applied are an icon and a count, so all four views fit without scrolling. */
+@media (max-width: 519px) {
+  .ftab .tname { display: none; }
+}

@@ -1,5 +1,20 @@
 # BITSians Startup Map — design spec
 
+## v5 — "Register" (2026-11-13: the front page is roles and companies; the map moves to `/map`)
+
+The site's job is the shortest path from a BITSian to a job at a BITSian company, so the first screen is roles, not geography. v4's tokens, Archivo and "green means hiring" are unchanged; v4 below still describes the map page. Styles for the front page and company pages are in `src/styles/site.css`, all under `.site`.
+
+- **Pages:** `/` is `Front.svelte` (no MapLibre on this page), `/map` is the v4 map app, `/c/<id>` is the company page. Old links keep working: `/?c=<id>` opens that company on the front page, `/?sector=…` opens the company list with the filter.
+- **Hero:** the line "Your seniors are hiring." (Archivo `wdth` 62, `wght` 860, 52 to 124px by column width) and one sentence whose three numbers are buttons (companies, hiring, open roles). No stat tiles.
+- **Batch chart, the one bold element:** one square per founder, stacked on their batch year (1960 to now), green when their company is hiring, grey (`--chart-rest #8A948F`) otherwise; green sits at the bottom of each stack. Hovering names the founder, batch and company; a click opens the company. The decade buttons under it filter the company list and are the keyboard route (the squares are `aria-hidden`). Green against grey was checked for colour-blind separation; grey needs the white card behind it for 3:1.
+- **Stage:** one white sheet (28px radius, 1px border, no shadow) with four views: Roles, Companies, Saved, Applied. The view counts follow the search, so a search that matches companies but no roles shows where the matches are.
+- **Roles:** grouped under the company and its founder's batch tag (`Raj Neervannan  Pilani ’88`), four per company until expanded. Filters: In India, Remote, Team, Company. Opening a posting asks "Applied to this role?" on that row. Hiring companies whose boards can't be read are listed under the roles as chips.
+- **Companies:** a register, one row per company: name and one line, founders and batch tag, sector and stage, city. Filters as on the map plus **Batch** (by decade). A row is a real link to `/c/<id>`; a plain click opens the company beside the list (bottom sheet on phones), and from 1280px the list narrows to make room for it. Layout breakpoints are container queries on the page column, so they follow that narrowing.
+- **Company page:** the page founders share. Name in the display face, green banner when hiring, roles and tracker on the left; founders with outlined batch tags, "Share this page" (copy link, LinkedIn, WhatsApp) and sources on the right; "Keep looking" links to the same sector, campus and city.
+- **Stale roles:** the front page and company pages are static, so both hide role lists once they are 14 days old (an inline script before first paint), matching the map.
+- **Motion:** one moment, the chart's columns growing in on load. Nothing else animates on its own.
+- **Copy:** "Free for every BITSian, always" is in the footer. Nothing about referrals appears unless a form URL is set (`.env.example`).
+
 ## v4 — "Field map" (2026-11-09, supersedes v3's dark "City lights" theme)
 
 Light, map-first layout with floating cards, modelled on map-based job boards. Tokens live in `src/styles/global.css` (`--paper #E9ECE8`, `--surface #FFF`, `--ink #16201B`, `--peacock #0A6C74`, `--hire #23863F`; all text pairs ≥ 4.5:1).

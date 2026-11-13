@@ -28,7 +28,7 @@ You need, once per machine:
 
 - you are on `main`, with no uncommitted or untracked files, and `HEAD` equals `origin/main`;
 - Node is 22.12 or newer and `SITE_URL` is a public https URL (it warns if it is not the production URL);
-- the build succeeds, contains the home page, 404 page, sitemap and map worker, has one page per
+- the build succeeds, contains the home page, map page, 404 page, sitemap and map worker, has one page per
   company in `web/src/data/companies.json`, and its canonical link and sitemap use `SITE_URL`.
 
 Then it deploys with the commit recorded on the Cloudflare version (`--tag <short sha>`,
@@ -42,8 +42,10 @@ If `wrangler deploy` fails, the previous version stays live; check with
 
 Open each of these on the live site and hard refresh:
 
-- [ ] Home page loads, the map shows tiles and city markers, the list shows companies.
-- [ ] A filter (Hiring, Location) changes the list and the map.
+- [ ] Home page loads with the batch chart and the Roles view listing roles by company.
+- [ ] On the home page, a search and a filter (In India, then Companies and Hiring) change the lists and the counts on the views.
+- [ ] `/map` loads, shows tiles and city markers, and a filter (Hiring, Location) changes the list and the map.
+- [ ] An old link, `/?c=swiggy`, opens Swiggy on the home page.
 - [ ] A company page, e.g. `/c/swiggy`, shows founders and "View open roles".
 - [ ] `/c/swiggy/` redirects to `/c/swiggy`; `/c/does-not-exist` shows the 404 page.
 - [ ] View source on the home page: `<link rel="canonical">` starts with the production URL.
